@@ -1,6 +1,7 @@
 package ru.fe.crypto.mail;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 // todo: change String to other abstracted type
@@ -17,15 +18,15 @@ public interface Crypto {
         }
     }
 
-    SignerData getSigners(String data) throws CryptoException, IOException;
+    SignerData getSigners(InputStream data) throws CryptoException, IOException;
 
-    List<SignInfo> getSignersDetached(String data, String signature) throws CryptoException, IOException;
+    List<SignInfo> getSignersDetached(InputStream data, InputStream signature) throws CryptoException, IOException;
 
-    String signData(String data, SignKey key, boolean detached) throws CryptoException, IOException;
+    byte[] signData(String data, SignKey key, boolean detached) throws CryptoException, IOException;
 
-    String encryptData(String data, EncryptKey key) throws CryptoException, IOException;
+    byte[] encryptData(String data, EncryptKey key) throws CryptoException, IOException;
 
-    String decryptData(String data) throws CryptoException, IOException;
+    String decryptData(InputStream data) throws CryptoException, IOException;
 
-    String cosignData(String data, String signature, SignKey key, boolean detached) throws CryptoException;
+    byte[] cosignData(String data, String signature, SignKey key, boolean detached) throws CryptoException;
 }

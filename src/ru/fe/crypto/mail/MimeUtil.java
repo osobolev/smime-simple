@@ -8,13 +8,13 @@ import javax.mail.internet.MimePart;
 import java.io.*;
 import java.util.Enumeration;
 
-public final class MimeUtil {
+final class MimeUtil {
 
-    public static String base64(byte[] data) throws IOException {
+    static String base64(byte[] data) throws IOException {
         return base64(new ByteArrayInputStream(data));
     }
 
-    public static String base64(InputStream is) throws IOException {
+    static String base64(InputStream is) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         OutputStream os = new BASE64EncoderStream(bos, 64);
         while (true) {

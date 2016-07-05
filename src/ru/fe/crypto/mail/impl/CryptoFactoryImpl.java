@@ -6,10 +6,11 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import ru.fe.crypto.mail.*;
+import ru.fe.crypto.mail.Crypto;
+import ru.fe.crypto.mail.CryptoFactory;
+import ru.fe.crypto.mail.EncryptKey;
+import ru.fe.crypto.mail.SignKey;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -59,9 +60,5 @@ public final class CryptoFactoryImpl implements CryptoFactory {
 
     public Crypto getCrypto() {
         return new CryptoImpl(privateKey);
-    }
-
-    public Data fromRaw(InputStream is) throws IOException {
-        return null; // todo
     }
 }

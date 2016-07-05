@@ -56,19 +56,18 @@ final class MailReader {
                 if (current.isMimeType("application/pkcs7-mime")) {
                     ContentType contentType = new ContentType(current.getContentType());
                     String smime = contentType.getParameter("smime-type");
-                    String partData = MimeUtil.base64(current.getInputStream());
                     String result;
                     Crypto instance = getInstance();
                     if ("signed-data".equals(smime)) {
-                        Crypto.SignerData sd = instance.getSigners(partData);
+                        Crypto.SignerData sd = instance.getSigners(current.getInputStream());
                         if (needRaw) {
-                            rawData = partData;
+                            rawData = MimeUtil.base64(current.getInputStream());
                         }
 
                         certificates.addAll(sd.signers);
                         result = sd.data;
                     } else {
-                        result = instance.decryptData(partData);
+                        result = instance.decryptData(current.getInputStream());
                     }
                     current = new MimeBodyPart(new ByteArrayInputStream(result.getBytes()));
                     if (current.isMimeType(MULTIPART_SIGNED)) {
@@ -115,12 +114,10 @@ final class MailReader {
                 dataPart = part1;
             }
 
-            String signatureData = MimeUtil.base64(signaturePart.getInputStream());
             Crypto instance = getInstance();
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             write(dataPart, bos);
-            String partString = bos.toString();
-            List<SignInfo> signatures = instance.getSignersDetached(partString, signatureData);
+            List<SignInfo> signatures = instance.getSignersDetached(new ByteArrayInputStream(bos.toByteArray()), signaturePart.getInputStream());
             if (signatures == null) {
                 return new SignedPart(msg, dataPart, new SignInfo[0], null, null, null); // todo: signal signature check error to caller
             }
@@ -132,7 +129,7 @@ final class MailReader {
                 attachmentPart = dataPart;
             }
             if (needRaw) {
-                return new SignedPart(msg, attachmentPart, certificates, partString, signatureData);
+                return new SignedPart(msg, attachmentPart, certificates, bos.toString(), MimeUtil.base64(signaturePart.getInputStream()));
             } else {
                 return new SignedPart(msg, attachmentPart, certificates, null, null);
             }

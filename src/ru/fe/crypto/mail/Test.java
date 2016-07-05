@@ -20,6 +20,16 @@ public final class Test {
         CryptoFactoryImpl factory = CryptoFactoryImpl.create();
         InputStreamSource src = new MemStreamSource("abba.txt", "Xyzzy".getBytes());
 
+        {
+            MimeMessage message = SMimeSend.createMessage(
+                factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
+                new SignKey[] {factory.getSignKey()}, null, true
+            );
+            message.writeTo(System.out);
+            System.out.flush();
+            check(factory, message);
+        }
+
         for (int detach = 0; detach < 2; detach++) {
             for (int sign = 0; sign < 3; sign++) {
                 SignKey[] signCerts = new SignKey[sign];
@@ -28,6 +38,7 @@ public final class Test {
                 }
                 for (int enc = 0; enc < 2; enc++) {
                     EncryptKey encryptKey = enc == 0 ? null : factory.getEncryptKey();
+                    System.out.println(sign + " " + enc + " " + detach);
                     MimeMessage message = SMimeSend.createMessage(
                         factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
                         signCerts, encryptKey, detach != 0
@@ -42,6 +53,6 @@ public final class Test {
         SignedPart part = SMimeReceive.read(factory, message);
         String content = (String) part.dataPart.getContent();
         if (!"Xyzzy".equals(content))
-            throw new IllegalStateException();
+            throw new IllegalStateException(content);
     }
 }
