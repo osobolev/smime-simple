@@ -1,11 +1,8 @@
 package ru.fe.crypto.mail.impl;
 
 import com.sun.mail.util.BASE64DecoderStream;
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cms.*;
 import org.bouncycastle.cms.jcajce.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -23,21 +20,22 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.security.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.*;
 
-public final class CryptoImpl implements Crypto {
+final class CryptoImpl implements Crypto {
 
     private static final Charset CHARSET = Charset.defaultCharset(); // todo: US-ASCII
 
     private final PrivateKey storedKey;
 
-    public CryptoImpl(PrivateKey storedKey) {
+    CryptoImpl(PrivateKey storedKey) {
         this.storedKey = storedKey;
     }
 
@@ -165,38 +163,20 @@ public final class CryptoImpl implements Crypto {
     public static void main(String[] args) throws CryptoException, IOException, NoSuchAlgorithmException, NoSuchProviderException, OperatorCreationException, CertificateException {
         Security.addProvider(new BouncyCastleProvider());
 
-        KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA", "BC");
-        gen.initialize(1024);
-        KeyPair pair = gen.generateKeyPair();
-        PublicKey pub = pair.getPublic();
-        PrivateKey priv = pair.getPrivate();
-
-        long now = System.currentTimeMillis();
-        long year = 365 * 24 * 60 * 60 * 1000L;
-
-        X500Name name = new X500Name("CN=www.mockserver.com, O=MockServer, L=London, ST=England, C=UK");
-        JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
-            name,
-            BigInteger.valueOf(now),
-            new Date(now - year), new Date(now + year), name,
-            pub
-        );
-        X509CertificateHolder holder = builder.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider("BC").build(priv));
-        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(holder);
-
-        CryptoImpl crypto = new CryptoImpl(priv);
-        String encrypted = crypto.encryptData("Xyzzy", new EncryptKeyImpl(cert));
+        CryptoFactoryImpl factory = CryptoFactoryImpl.create();
+        Crypto crypto = factory.getCrypto();
+        String encrypted = crypto.encryptData("Xyzzy", factory.getEncryptKey());
         System.out.println(encrypted);
         String s = crypto.decryptData(encrypted);
         System.out.println(s);
 
-        String undetached = crypto.signData("ABBA", new SignKeyImpl(cert, priv), false);
+        String undetached = crypto.signData("ABBA", factory.getSignKey(), false);
         System.out.println(undetached);
         SignerData signers = crypto.getSigners(undetached);
         System.out.println(signers.data);
         System.out.println(signers.signers);
 
-        String detached = crypto.signData("ABBA", new SignKeyImpl(cert, priv), true);
+        String detached = crypto.signData("ABBA", factory.getSignKey(), true);
         System.out.println(detached);
         List<SignInfo> dsigners = crypto.getSignersDetached("ABBA", detached);
         System.out.println(dsigners);
