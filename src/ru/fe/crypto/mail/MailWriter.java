@@ -102,7 +102,7 @@ final class MailWriter {
 
             String smime;
             if (envelope.type == EnvelopeDesc.COSIGN) {
-                byte[] cosignedData;
+                String cosignedData;
                 if (envelope.rawSignature == null) {
                     cosignedData = instance.cosignData("", envelope.rawData, envelope.signKey, false);
                 } else {
@@ -117,7 +117,7 @@ final class MailWriter {
                 }
 
                 smime = "signed-data";
-                currentData = MimeUtil.base64(cosignedData);
+                currentData = cosignedData;
             } else {
                 String text;
                 if (currentData != null) {
@@ -128,15 +128,15 @@ final class MailWriter {
                     text = bos.toString();
                 }
                 if (envelope.type == EnvelopeDesc.ENCRYPT) {
-                    byte[] encryptedData = instance.encryptData(text, envelope.encryptKey);
+                    String encryptedData = instance.encryptData(text, envelope.encryptKey);
 
                     smime = "enveloped-data";
-                    currentData = MimeUtil.base64(encryptedData);
+                    currentData = encryptedData;
                 } else {
-                    byte[] signedData = instance.signData(text, envelope.signKey, false);
+                    String signedData = instance.signData(text, envelope.signKey, false);
 
                     smime = "signed-data";
-                    currentData = MimeUtil.base64(signedData);
+                    currentData = signedData;
                 }
             }
             current = new MimeBodyPart();
@@ -223,7 +223,7 @@ final class MailWriter {
 
         MimeBodyPart plainPart;
         String data;
-        byte[] signature;
+        String signature;
         if (src != null) {
             plainPart = new MimeBodyPart();
             fillPlain(plainPart, src.getName(), charset, comment);
@@ -268,7 +268,7 @@ final class MailWriter {
             los.writeln(rawData);
         }
         los.writeln(boundary);
-        writeMessage(los, signPart, MimeUtil.base64(signature));
+        writeMessage(los, signPart, signature);
         los.writeln(boundary + "--");
         los.flush();
 

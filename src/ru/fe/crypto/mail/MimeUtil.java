@@ -8,9 +8,9 @@ import javax.mail.internet.MimePart;
 import java.io.*;
 import java.util.Enumeration;
 
-final class MimeUtil {
+public final class MimeUtil {
 
-    static String base64(byte[] data) throws IOException {
+    public static String base64(byte[] data) throws IOException {
         return base64(new ByteArrayInputStream(data));
     }
 

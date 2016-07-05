@@ -20,15 +20,15 @@ public final class Test {
         CryptoFactoryImpl factory = CryptoFactoryImpl.create();
         InputStreamSource src = new MemStreamSource("abba.txt", "Xyzzy".getBytes());
 
-        {
-            MimeMessage message = SMimeSend.createMessage(
-                factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
-                new SignKey[] {factory.getSignKey()}, null, true
-            );
-            message.writeTo(System.out);
-            System.out.flush();
-            check(factory, message);
-        }
+//        {
+//            MimeMessage message = SMimeSend.createMessage(
+//                factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
+//                new SignKey[] {factory.getSignKey()}, null, true
+//            );
+//            message.writeTo(System.out);
+//            System.out.flush();
+//            check(factory, message);
+//        }
 
         for (int detach = 0; detach < 2; detach++) {
             for (int sign = 0; sign < 3; sign++) {
