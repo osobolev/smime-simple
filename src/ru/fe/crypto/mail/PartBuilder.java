@@ -1,5 +1,6 @@
 package ru.fe.crypto.mail;
 
+import com.sun.mail.util.CRLFOutputStream;
 import com.sun.mail.util.LineOutputStream;
 import ru.fe.common.StreamUtils;
 
@@ -52,9 +53,13 @@ public final class PartBuilder {
         return factory.getCrypto();
     }
 
+    public static void write(Part part, OutputStream os) throws IOException, MessagingException {
+        part.writeTo(new CRLFOutputStream(os));
+    }
+
     private static String partToString(Part part) throws IOException, MessagingException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        SignedPart.write(part, bos);
+        write(part, bos);
         return bos.toString();
     }
 

@@ -6,7 +6,10 @@ import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.internet.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -123,7 +126,7 @@ final class MailWriter {
                     text = writeMessage(current, currentData);
                 } else {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    SignedPart.write(current, bos);
+                    PartBuilder.write(current, bos);
                     text = bos.toString();
                 }
                 if (envelope.type == EnvelopeDesc.ENCRYPT) {

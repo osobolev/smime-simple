@@ -1,6 +1,9 @@
 package ru.fe.common;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Date: 08.06.2009

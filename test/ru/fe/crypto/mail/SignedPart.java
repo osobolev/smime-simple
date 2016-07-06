@@ -1,6 +1,5 @@
 package ru.fe.crypto.mail;
 
-import com.sun.mail.util.CRLFOutputStream;
 import ru.fe.common.StreamUtils;
 
 import javax.mail.Message;
@@ -46,10 +45,5 @@ public final class SignedPart {
         this.rawData = rawData;
         this.rawSignature = rawSignature;
         this.error = error;
-    }
-
-    // todo: move away
-    public static void write(Part part, OutputStream os) throws IOException, MessagingException {
-        part.writeTo(new CRLFOutputStream(os));
     }
 }
