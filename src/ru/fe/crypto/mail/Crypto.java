@@ -6,6 +6,8 @@ import java.util.List;
 
 public interface Crypto {
 
+    // Reading:
+
     final class SignerData {
 
         public final List<SignInfo> signers;
@@ -28,6 +30,14 @@ public interface Crypto {
     List<SignInfo> getSignersDetached(InputStream data, InputStream signature) throws CryptoException, IOException;
 
     /**
+     * @param data raw data to decrypt
+     * @return raw decrypted ASCII data
+     */
+    String decryptData(InputStream data) throws CryptoException, IOException;
+
+    // Writing:
+
+    /**
      * @param data raw data to sign (must be ASCII)
      * @return BASE64-encoded signature
      */
@@ -39,11 +49,7 @@ public interface Crypto {
      */
     String encryptData(String data, EncryptKey key) throws CryptoException, IOException;
 
-    /**
-     * @param data raw data to decrypt
-     * @return raw decrypted ASCII data
-     */
-    String decryptData(InputStream data) throws CryptoException, IOException;
+    // Co-sign:
 
     String cosignData(String data, String signature, SignKey key, boolean detached) throws CryptoException, IOException;
 }

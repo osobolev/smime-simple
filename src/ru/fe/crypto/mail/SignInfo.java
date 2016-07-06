@@ -10,16 +10,18 @@ public final class SignInfo {
      */
     public final Date signDate;
     /**
-     * Not null
+     * Can be null
      */
     public final Map<String, String> info;
+    public final boolean verified;
 
-    public SignInfo(Date signDate, Map<String, String> info) {
+    public SignInfo(Date signDate, Map<String, String> info, boolean verified) {
         this.signDate = signDate;
         this.info = info;
+        this.verified = verified;
     }
 
     public String toString() {
-        return info.toString();
+        return info == null ? "-" : info.toString();
     }
 }

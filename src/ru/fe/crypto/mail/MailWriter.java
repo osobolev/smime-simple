@@ -33,9 +33,9 @@ final class MailWriter {
 
     static MimeMessage finalizeMessage(Session session, MimeMessage msg, String data) throws MessagingException, IOException {
         msg.saveChanges();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        writeMessage(bos, msg, data);
-        return new MimeMessage(session, new ByteArrayInputStream(bos.toByteArray()));
+        BiByteArrayStream bis = new BiByteArrayStream();
+        writeMessage(bis.output(), msg, data);
+        return new MimeMessage(session, bis.input());
     }
 
     static String fillMessage(CryptoFactory factory, MimeMessage msg, MimeMessage originalMsg,
@@ -84,7 +84,6 @@ final class MailWriter {
     private static final class Enveloper {
 
         private final CryptoFactory factory;
-        private Crypto instance = null;
 
         private MimePart current;
         private String currentData;
@@ -95,19 +94,19 @@ final class MailWriter {
             this.currentData = currentData;
         }
 
-        void run(EnvelopeDesc envelope) throws MessagingException, IOException, CryptoException {
-            if (instance == null) {
-                instance = factory.getCrypto();
-            }
+        private Crypto getCrypto() {
+            return factory.getCrypto();
+        }
 
+        void run(EnvelopeDesc envelope) throws MessagingException, IOException, CryptoException {
             String smime;
             if (envelope.type == EnvelopeDesc.COSIGN) {
                 String cosignedData;
                 if (envelope.rawSignature == null) {
-                    cosignedData = instance.cosignData("", envelope.rawData, envelope.signKey, false);
+                    cosignedData = getCrypto().cosignData("", envelope.rawData, envelope.signKey, false);
                 } else {
                     HeadersWithData hwd = signedMultipart(
-                        null, instance, null, null, null, envelope.rawData, envelope.rawSignature, envelope.signKey
+                        null, factory, null, null, null, envelope.rawData, envelope.rawSignature, envelope.signKey
                     );
                     current = new MimeBodyPart();
                     current.setHeader(CONTENT_TYPE, hwd.headers.getContentType());
@@ -128,12 +127,12 @@ final class MailWriter {
                     text = bos.toString();
                 }
                 if (envelope.type == EnvelopeDesc.ENCRYPT) {
-                    String encryptedData = instance.encryptData(text, envelope.encryptKey);
+                    String encryptedData = getCrypto().encryptData(text, envelope.encryptKey);
 
                     smime = "enveloped-data";
                     currentData = encryptedData;
                 } else {
-                    String signedData = instance.signData(text, envelope.signKey, false);
+                    String signedData = getCrypto().signData(text, envelope.signKey, false);
 
                     smime = "signed-data";
                     currentData = signedData;
@@ -153,42 +152,32 @@ final class MailWriter {
         String getData() {
             return currentData;
         }
-
-        void release() {
-            instance = null;
-        }
     }
 
     static String signEncrypt(CryptoFactory factory,
                               MimeMessage msg, MimeMessage originalMsg, String charset, InputStreamSource src, String comment,
                               List<EnvelopeDesc> envelopes) throws IOException, MessagingException, CryptoException {
-        Enveloper enveloper = null;
-        try {
-            if (src != null) {
-                MimeBodyPart plainPart = new MimeBodyPart();
-                fillPlain(plainPart, src.getName(), charset, comment);
-                String plainData = MimeUtil.base64(src.open());
-                enveloper = new Enveloper(factory, plainPart, plainData);
-            } else {
-                enveloper = new Enveloper(factory, originalMsg, null);
-            }
-
-            for (EnvelopeDesc envelope : envelopes) {
-                enveloper.run(envelope);
-            }
-
-            MimePart part = enveloper.getPart();
-            Enumeration<?> headers = part.getAllHeaderLines();
-            while (headers.hasMoreElements()) {
-                String line = (String) headers.nextElement();
-                msg.addHeaderLine(line);
-            }
-            return enveloper.getData();
-        } finally {
-            if (enveloper != null) {
-                enveloper.release();
-            }
+        Enveloper enveloper;
+        if (src != null) {
+            MimeBodyPart plainPart = new MimeBodyPart();
+            fillPlain(plainPart, src.getName(), charset, comment);
+            String plainData = MimeUtil.base64(src.open());
+            enveloper = new Enveloper(factory, plainPart, plainData);
+        } else {
+            enveloper = new Enveloper(factory, originalMsg, null);
         }
+
+        for (EnvelopeDesc envelope : envelopes) {
+            enveloper.run(envelope);
+        }
+
+        MimePart part = enveloper.getPart();
+        Enumeration<?> headers = part.getAllHeaderLines();
+        while (headers.hasMoreElements()) {
+            String line = (String) headers.nextElement();
+            msg.addHeaderLine(line);
+        }
+        return enveloper.getData();
     }
 
     private static void fillPlain(MimeBodyPart plainPart, String fileName, String charset, String comment) throws MessagingException, UnsupportedEncodingException {
@@ -204,9 +193,8 @@ final class MailWriter {
                                      String charset, InputStreamSource src, String comment,
                                      SignedPart sp,
                                      SignKey signCert) throws MessagingException, IOException, CryptoException {
-        Crypto instance = factory.getCrypto();
         HeadersWithData hwd = signedMultipart(
-            "This is an S/MIME multipart signed message", instance,
+            "This is an S/MIME multipart signed message", factory,
             charset, src, comment,
             sp == null ? null : sp.rawData, sp == null ? null : sp.rawSignature,
             signCert
@@ -215,7 +203,7 @@ final class MailWriter {
         return hwd.data;
     }
 
-    private static HeadersWithData signedMultipart(String preamble, Crypto instance,
+    private static HeadersWithData signedMultipart(String preamble, CryptoFactory factory,
                                                    String charset, InputStreamSource src, String comment,
                                                    String rawData, String rawSignature,
                                                    SignKey signCert) throws IOException, MessagingException, CryptoException {
@@ -232,11 +220,11 @@ final class MailWriter {
 
             String text = writeMessage(plainPart, data);
 
-            signature = instance.signData(text, signCert, true);
+            signature = factory.getCrypto().signData(text, signCert, true);
         } else {
             plainPart = null;
             data = null;
-            signature = instance.cosignData(rawData, rawSignature, signCert, true);
+            signature = factory.getCrypto().cosignData(rawData, rawSignature, signCert, true);
         }
 
         MimeBodyPart signPart = new MimeBodyPart();

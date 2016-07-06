@@ -114,13 +114,9 @@ final class MailReader {
                 dataPart = part1;
             }
 
-            Crypto instance = getInstance();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            write(dataPart, bos);
-            List<SignInfo> signatures = instance.getSignersDetached(new ByteArrayInputStream(bos.toByteArray()), signaturePart.getInputStream());
-            if (signatures == null) {
-                return new SignedPart(msg, dataPart, new SignInfo[0], null, null, null); // todo: signal signature check error to caller
-            }
+            BiByteArrayStream bis = new BiByteArrayStream();
+            write(dataPart, bis.output());
+            List<SignInfo> signatures = getInstance().getSignersDetached(bis.input(), signaturePart.getInputStream());
 
             certificates.addAll(signatures);
 
@@ -129,7 +125,7 @@ final class MailReader {
                 attachmentPart = dataPart;
             }
             if (needRaw) {
-                return new SignedPart(msg, attachmentPart, certificates, bos.toString(), MimeUtil.base64(signaturePart.getInputStream()));
+                return new SignedPart(msg, attachmentPart, certificates, bis.toString(), MimeUtil.base64(signaturePart.getInputStream()));
             } else {
                 return new SignedPart(msg, attachmentPart, certificates, null, null);
             }
@@ -141,18 +137,10 @@ final class MailReader {
             StreamUtils.copyStreamEoln(is, os);
             os.flush();
         }
-
-        void release() {
-            instance = null;
-        }
     }
 
     static SignedPart decrypt(CryptoFactory factory, MimeMessage msg, boolean needRaw) throws MessagingException, IOException, CryptoException {
         Environment environment = new Environment(factory, msg, needRaw);
-        try {
-            return environment.decrypt();
-        } finally {
-            environment.release();
-        }
+        return environment.decrypt();
     }
 }

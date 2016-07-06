@@ -1,23 +1,13 @@
 package ru.fe.crypto.mail;
 
-import javax.mail.Address;
-import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
 public final class SMimeSend {
-
-    private final CryptoFactory factory;
-    private final Session session = SMimeReceive.createFakeSession();
-
-    public SMimeSend(CryptoFactory factory) {
-        this.factory = factory;
-    }
 
     public static MimeMessage createMessage(CryptoFactory factory,
                                             Session session, String charset, InputStreamSource src, String comment,
@@ -35,21 +25,9 @@ public final class SMimeSend {
         return MailWriter.finalizeMessage(session, msg, data);
     }
 
-    private static void addHeaders(MimeMessage msg,
-                                   Address from, Address[] to, String subject, String charset) throws MessagingException {
-        msg.setSubject(subject, charset);
-        msg.setFrom(from);
-        for (Address address : to) {
-            msg.addRecipient(Message.RecipientType.TO, address);
-        }
-    }
-
-    public MimeMessage saveMail(Address from, Address[] to, String subject, String charset,
-                                InputStreamSource src, String comment,
-                                SignKey[] signCerts, EncryptKey encryptCert, boolean detachSignature) throws CryptoException, MessagingException, IOException {
-        MimeMessage msg = createMessage(factory, session, charset, src, comment, signCerts, encryptCert, detachSignature);
-        addHeaders(msg, from, to, subject, charset);
-        return msg;
+    public static Session createFakeSession() {
+        Properties props = new Properties();
+        return Session.getDefaultInstance(props, null);
     }
 
     public static MimeMessage cosignMessage(CryptoFactory factory, Session session, MimeMessage message,
@@ -60,22 +38,5 @@ public final class SMimeSend {
         MimeMessage msg = new MimeMessage(session);
         String data = MailWriter.fillMessage(factory, msg, message, null, null, null, sp, signCerts, encryptCert, sp.rawSignature != null);
         return MailWriter.finalizeMessage(session, msg, data);
-    }
-
-    public MimeMessage saveCosignedMail(Address from, Address[] to, String subject, String charset,
-                                        MimeMessage source,
-                                        SignKey[] signCerts, EncryptKey encryptCert) throws CryptoException, MessagingException, IOException {
-        MimeMessage cosigned;
-        if ((signCerts != null && signCerts.length > 0) || encryptCert != null) {
-            cosigned = cosignMessage(factory, session, source, signCerts, encryptCert);
-            if (cosigned == null)
-                return null;
-        } else {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            SignedPart.write(source, bos);
-            cosigned = new MimeMessage(session, new ByteArrayInputStream(bos.toByteArray()));
-        }
-        addHeaders(cosigned, from, to, subject, charset);
-        return cosigned;
     }
 }

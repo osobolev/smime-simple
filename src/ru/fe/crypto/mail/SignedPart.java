@@ -48,6 +48,7 @@ public final class SignedPart {
         this.error = error;
     }
 
+    // todo: move away
     public static void write(Part part, OutputStream os) throws IOException, MessagingException {
         part.writeTo(new CRLFOutputStream(os));
     }

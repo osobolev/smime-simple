@@ -6,6 +6,7 @@ import java.io.*;
  * Date: 08.06.2009
  *
  * @author enaku
+ * todo: remove from here???
  */
 public final class StreamUtils {
 
@@ -38,7 +39,7 @@ public final class StreamUtils {
         int read;
         boolean prevR = false;
         byte[] eoln = {'\r', '\n'};
-        while ((read = in.read(arr)) != -1) {
+        while ((read = in.read(arr)) >= 0) {
             for (int i = 0; i < read; i++) {
                 byte ch = arr[i];
                 if (prevR) {
@@ -62,9 +63,9 @@ public final class StreamUtils {
                     }
                 }
             }
-            if (prevR) {
-                out.write(eoln);
-            }
+        }
+        if (prevR) {
+            out.write(eoln);
         }
     }
 }

@@ -4,7 +4,10 @@ import com.sun.mail.util.BASE64DecoderStream;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cms.*;
-import org.bouncycastle.cms.jcajce.*;
+import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DigestCalculatorProvider;
@@ -17,13 +20,12 @@ import ru.fe.common.StreamUtils;
 import ru.fe.crypto.mail.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -32,12 +34,12 @@ import java.util.*;
 final class CryptoImpl implements Crypto {
 
     private static final Charset CHARSET = Charset.defaultCharset();
-    private static final String BC = CryptoFactoryImpl.BC;
+    private static final String BC = KeyData.BC;
 
-    private final PrivateKey storedKey;
+    private final List<KeyData> storedKeys;
 
-    CryptoImpl(PrivateKey storedKey) {
-        this.storedKey = storedKey;
+    CryptoImpl(List<KeyData> storedKeys) {
+        this.storedKeys = storedKeys;
     }
 
     private static List<SignInfo> getSigners(CMSSignedDataParser sp) throws CMSException, OperatorCreationException, CertificateException {
@@ -49,11 +51,9 @@ final class CryptoImpl implements Crypto {
             for (Object match : matches) {
                 X509CertificateHolder holder = (X509CertificateHolder) match;
                 boolean ok = signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(holder));
-                if (ok) {
-                    Map<String, String> info = new HashMap<String, String>();
-                    info.put("name", holder.getSubject().toString());
-                    sis.add(new SignInfo(null, info));
-                }
+                Map<String, String> info = new HashMap<String, String>();
+                info.put("name", holder.getSubject().toString());
+                sis.add(new SignInfo(null, info, ok));
             }
         }
         return sis;
@@ -102,7 +102,7 @@ final class CryptoImpl implements Crypto {
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
         try {
             Store<?> store = new JcaCertStore(Collections.singletonList(impl.certificate));
-            ContentSigner contentSigner = new JcaContentSignerBuilder(CryptoFactoryImpl.ALGORITHM).setProvider(BC).build(impl.key);
+            ContentSigner contentSigner = new JcaContentSignerBuilder(KeyData.ALGORITHM).setProvider(BC).build(impl.key);
             DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
             gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digestCalculatorProvider).build(contentSigner, impl.certificate));
             gen.addCertificates(store);
@@ -139,8 +139,15 @@ final class CryptoImpl implements Crypto {
             if (!i.hasNext())
                 throw new CryptoExceptionImpl("No encryption recipients found");
             RecipientInformation ri = i.next();
-            Recipient recipient = new JceKeyTransEnvelopedRecipient(storedKey);
-            return new String(ri.getContent(recipient), CHARSET);
+            KeyTransRecipientId rid = (KeyTransRecipientId) ri.getRID();
+            BigInteger serialNumber = rid.getSerialNumber();
+            for (KeyData storedKey : storedKeys) {
+                if (storedKey.matches(serialNumber)) {
+                    Recipient recipient = storedKey.getRecipient();
+                    return new String(ri.getContent(recipient), CHARSET);
+                }
+            }
+            throw new CryptoExceptionImpl("Serial number " + serialNumber + " not found for decrypt");
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         }
@@ -160,7 +167,7 @@ final class CryptoImpl implements Crypto {
                 data = extractData(sp);
             }
             Store<?> store = new JcaCertStore(Collections.singletonList(impl.certificate));
-            ContentSigner contentSigner = new JcaContentSignerBuilder(CryptoFactoryImpl.ALGORITHM).setProvider(BC).build(impl.key);
+            ContentSigner contentSigner = new JcaContentSignerBuilder(KeyData.ALGORITHM).setProvider(BC).build(impl.key);
             gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digestCalculatorProvider).build(contentSigner, impl.certificate));
             gen.addCertificates(store);
             gen.addCertificates(sp.getCertificates());
@@ -181,52 +188,55 @@ final class CryptoImpl implements Crypto {
 
     private static InputStream unbase64(String str) throws IOException {
         BASE64DecoderStream stream = new BASE64DecoderStream(raw(str));
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        BiByteArrayStream bis = new BiByteArrayStream();
         while (true) {
             int c = stream.read();
             if (c < 0)
                 break;
-            buf.write(c);
+            bis.output().write(c);
         }
-        return new ByteArrayInputStream(buf.toByteArray());
+        return bis.input();
     }
 
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) throws CryptoException, IOException, NoSuchAlgorithmException, NoSuchProviderException, OperatorCreationException, CertificateException {
         Security.addProvider(new BouncyCastleProvider());
 
-        CryptoFactoryImpl factory = CryptoFactoryImpl.create();
+        KeyData key1 = KeyData.create(1);
+        KeyData key2 = KeyData.create(2);
+
+        CryptoFactoryImpl factory = new CryptoFactoryImpl(Arrays.asList(key1, key2));
         Crypto crypto = factory.getCrypto();
         {
-            String encrypted = crypto.encryptData("Xyzzy", factory.getEncryptKey());
+            String encrypted = crypto.encryptData("Xyzzy", key1.getEncryptKey());
             String s = crypto.decryptData(unbase64(encrypted));
             System.out.println(s);
         }
         {
-            String undetached = crypto.signData("ABBA", factory.getSignKey(), false);
+            String undetached = crypto.signData("ABBA", key1.getSignKey(), false);
             SignerData signers = crypto.getSigners(unbase64(undetached));
             System.out.println(signers.data);
             System.out.println(signers.signers);
         }
         {
             String data = "ABBA";
-            String detached = crypto.signData(data, factory.getSignKey(), true);
+            String detached = crypto.signData(data, key1.getSignKey(), true);
             List<SignInfo> dsigners = crypto.getSignersDetached(raw(data), unbase64(detached));
             System.out.println(dsigners);
         }
         {
             String data = "ABBA";
             boolean detached = true;
-            String sdetached = crypto.signData(data, factory.getSignKey(), detached);
-            String cosigned = crypto.cosignData(data, sdetached, factory.getSignKey(), detached);
+            String sdetached = crypto.signData(data, key1.getSignKey(), detached);
+            String cosigned = crypto.cosignData(data, sdetached, key1.getSignKey(), detached);
             List<SignInfo> signers = crypto.getSignersDetached(raw(data), unbase64(cosigned));
             System.out.println(signers);
         }
         {
             String data = "ABBA";
             boolean detached = false;
-            String sundetached = crypto.signData(data, factory.getSignKey(), detached);
-            String cosigned = crypto.cosignData(null, sundetached, factory.getSignKey(), detached);
+            String sundetached = crypto.signData(data, key1.getSignKey(), detached);
+            String cosigned = crypto.cosignData(null, sundetached, key1.getSignKey(), detached);
             SignerData signers = crypto.getSigners(unbase64(cosigned));
             System.out.println(signers.data);
             System.out.println(signers.signers);
