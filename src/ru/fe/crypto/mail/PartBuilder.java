@@ -15,8 +15,6 @@ public final class PartBuilder {
 
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
-    private static final String ENVELOPE_FILE = "smime.p7m";
-    private static final String SIGNATURE_FILE = "smime.p7s";
     private static final String BASE64 = "base64";
 
     private final CryptoFactory factory;
@@ -36,13 +34,17 @@ public final class PartBuilder {
         return new MimeBodyPart(bis.input());
     }
 
-    private static MimeBodyPart createCryptoPart(String smime, String base64) throws MessagingException, IOException {
+    private static MimeBodyPart createCryptoPart(String mimeType, String fileName, String base64) throws MessagingException, IOException {
         MimeBodyPart headers = new MimeBodyPart();
-        headers.setHeader(CONTENT_TYPE, "application/pkcs7-mime; smime-type=\"" + smime + "\"");
+        headers.setHeader(CONTENT_TYPE, mimeType);
         headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
         headers.setDisposition(Part.ATTACHMENT);
-        headers.setFileName(ENVELOPE_FILE);
+        headers.setFileName(fileName);
         return createPart(headers, base64);
+    }
+
+    private static MimeBodyPart createCryptoPart(String mimeSubType, String base64) throws MessagingException, IOException {
+        return createCryptoPart("application/pkcs7-mime; smime-type=\"" + mimeSubType + "\"", "smime.p7m", base64);
     }
 
     private Crypto getCrypto() {
@@ -94,22 +96,13 @@ public final class PartBuilder {
         return signDetached(part, "This is an S/MIME multipart signed message", key);
     }
 
-    private static MimeBodyPart createSignaturePart(String signature) throws MessagingException, IOException {
-        MimeBodyPart sigHeader = new MimeBodyPart();
-        sigHeader.setHeader(CONTENT_TYPE, "application/pkcs7-signature");
-        sigHeader.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
-        sigHeader.setDisposition(Part.ATTACHMENT);
-        sigHeader.setFileName(SIGNATURE_FILE);
-        return createPart(sigHeader, signature);
-    }
-
     private static MimeMultipart createSignedMultipart(BodyPart dataPart, String signature, String preamble) throws MessagingException, IOException {
         MimeMultipart mp = new MimeMultipart("signed; protocol=\"application/pkcs7-signature\"");
         if (preamble != null) {
             mp.setPreamble(preamble);
         }
         mp.addBodyPart(dataPart);
-        mp.addBodyPart(createSignaturePart(signature));
+        mp.addBodyPart(createCryptoPart("application/pkcs7-signature", "smime.p7s", signature));
         return mp;
     }
 
@@ -125,10 +118,10 @@ public final class PartBuilder {
 
     public void cosignDetached(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         MimeMultipart mp = (MimeMultipart) part.getContent();
-        MimeBodyPart part1 = (MimeBodyPart) mp.getBodyPart(0);
-        MimeBodyPart part2 = (MimeBodyPart) mp.getBodyPart(1);
-        MimeBodyPart dataPart;
-        MimeBodyPart signaturePart;
+        BodyPart part1 = mp.getBodyPart(0);
+        BodyPart part2 = mp.getBodyPart(1);
+        BodyPart dataPart;
+        BodyPart signaturePart;
         if (part1.isMimeType("application/pkcs7-signature")) {
             signaturePart = part1;
             dataPart = part2;
