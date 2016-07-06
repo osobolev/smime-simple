@@ -117,8 +117,12 @@ public final class RandomMessageBuilder {
             MimeMessage cosigned = SMimeSend.cosignMessage(factory, session, rm.message, new SignKey[] {signKey}, null);
             return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Old cosigned " + k, true);
         } else {
-            MimeMessage cosigned = new CoSignWalker(factory, signKey).walk(session, rm.message);
-            return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Cosigned " + k, true);
+            CoSignedMessage cosigned = new CoSignWalker(factory, signKey).walk(rm.message);
+            if (!cosigned.isSigned()) {
+                boolean detached = rnd.nextBoolean();
+                cosigned = cosigned.sign(builder, signKey, detached);
+            }
+            return new RandomMessage(cosigned.getMessage(session), rm.oldCompatible, rm.description + " Cosigned " + k, true);
         }
     }
 

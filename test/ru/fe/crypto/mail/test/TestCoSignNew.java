@@ -38,8 +38,9 @@ public final class TestCoSignNew {
         MimeMessage message = PartBuilder.toMessage(session, signed);
 
         CoSignWalker walker = new CoSignWalker(factory, key2.getSignKey());
-        MimeMessage cosigned = walker.walk(session, message);
-        cosigned.writeTo(System.out);
+        CoSignedMessage cosigned = walker.walk(message);
+        MimeMessage cosignedMessage = cosigned.getMessage(session);
+        cosignedMessage.writeTo(System.out);
         System.out.flush();
 
         new PartWalker(factory, new PartCallback() {
@@ -51,6 +52,6 @@ public final class TestCoSignNew {
                 }
                 System.out.println(signed);
             }
-        }).walk(cosigned);
+        }).walk(cosignedMessage);
     }
 }

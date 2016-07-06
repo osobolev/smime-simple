@@ -2,7 +2,6 @@ package ru.fe.crypto.mail;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
-import javax.mail.Session;
 import javax.mail.internet.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -20,32 +19,16 @@ public final class CoSignWalker {
         this.addKey = addKey;
     }
 
-    public MimeMessage walk(Session session, MimeMessage message) throws MessagingException, IOException, CryptoException {
-        return walk(session, message, null);
-    }
-
-    // todo: return opaque object with extractors???
-    public MimeMessage walk(Session session, MimeMessage message, EncryptKey addEncrypt) throws MessagingException, IOException, CryptoException {
+    public CoSignedMessage walk(MimeMessage message) throws MessagingException, IOException, CryptoException {
         boolean[] signed = new boolean[1];
         MimePart part = walk(message, signed);
-        if (part instanceof MimeMessage && signed[0] && addEncrypt == null) {
-            MimeMessage cosigned = (MimeMessage) part;
-            cosigned.saveChanges();
-            return cosigned;
-        }
-        MimeBodyPart mbp;
         if (part instanceof MimeBodyPart) {
-            mbp = (MimeBodyPart) part;
+            MimeBodyPart mbp = (MimeBodyPart) part;
+            return new CoSignedMessage(null, mbp, signed[0]);
         } else {
-            mbp = PartBuilder.messageToPart(message);
+            message.saveChanges();
+            return new CoSignedMessage(message, null, signed[0]);
         }
-        if (!signed[0]) {
-            mbp = builder.sign(mbp, addKey); // todo: detached/undetached???
-        }
-        if (addEncrypt != null) {
-            mbp = builder.encrypt(mbp, addEncrypt);
-        }
-        return PartBuilder.toMessage(session, mbp);
     }
 
     private Crypto getCrypto() {
