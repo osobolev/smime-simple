@@ -12,7 +12,7 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import ru.fe.crypto.mail.CryptoException;
-import ru.fe.crypto.mail.Test;
+import ru.fe.crypto.mail.test.Test;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;

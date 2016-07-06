@@ -1,6 +1,7 @@
-package ru.fe.crypto.mail;
+package ru.fe.crypto.mail.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import ru.fe.crypto.mail.*;
 import ru.fe.crypto.mail.impl.CryptoFactoryImpl;
 import ru.fe.crypto.mail.impl.KeyData;
 
@@ -48,7 +49,7 @@ public final class Test {
             boolean compatible = true;
             if (isNew) {
                 buf.append("New");
-                MimeBodyPart filePart = builder.create(src, "text/plain", "Comment");
+                MimeBodyPart filePart = builder.createFile(src, "text/plain", "Comment");
                 int envelopes = rnd.nextInt(5);
                 MimeBodyPart current = filePart;
                 boolean wasDetached = false;
@@ -75,7 +76,7 @@ public final class Test {
                 if (wasDetached) {
                     compatible = envelopes <= 1;
                 }
-                message = PartBuilder.toMessage(SMimeSend.createFakeSession(), current);
+                message = PartBuilder.toMessage(SMimeReceive.createFakeSession(), current);
             } else {
                 buf.append("Old");
                 int sign = rnd.nextInt(3);
@@ -96,7 +97,7 @@ public final class Test {
                 boolean detach = rnd.nextBoolean();
                 buf.append(" " + (detach ? "Detach" : "No detach"));
                 message = SMimeSend.createMessage(
-                    factory, SMimeSend.createFakeSession(), "Windows-1251", src, "Comment",
+                    factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
                     signCerts, encryptKey, detach
                 );
             }
@@ -149,7 +150,7 @@ public final class Test {
     }
 
     private static void checkOld(CryptoFactoryImpl factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
-        SignedPart part = MailReader.decrypt(factory, message, false);
+        SignedPart part = SMimeReceive.read(factory, message);
         check(part.dataPart);
     }
 

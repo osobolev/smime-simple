@@ -1,7 +1,5 @@
 package ru.fe.crypto.mail;
 
-import ru.fe.common.StreamUtils;
-
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
@@ -137,7 +135,7 @@ final class MailReader {
         private static void write(MimeBodyPart part, OutputStream os) throws MessagingException, IOException {
             MimeUtil.writeHeaders(part, os);
             InputStream is = part.getRawInputStream();
-            StreamUtils.copyStreamEoln(is, os);
+            MimeUtil.copyStreamEoln(is, os);
             os.flush();
         }
     }

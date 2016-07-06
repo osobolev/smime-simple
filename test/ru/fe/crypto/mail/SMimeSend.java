@@ -5,7 +5,6 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.List;
-import java.util.Properties;
 
 public final class SMimeSend {
 
@@ -23,11 +22,6 @@ public final class SMimeSend {
         MimeMessage msg = new MimeMessage(session);
         String data = MailWriter.signEncrypt(factory, msg, null, charset, src, comment, envelopes);
         return MailWriter.finalizeMessage(session, msg, data);
-    }
-
-    public static Session createFakeSession() {
-        Properties props = new Properties();
-        return Session.getDefaultInstance(props);
     }
 
     public static MimeMessage cosignMessage(CryptoFactory factory, Session session, MimeMessage message,

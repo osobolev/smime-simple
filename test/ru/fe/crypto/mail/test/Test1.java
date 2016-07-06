@@ -1,7 +1,8 @@
-package ru.fe.crypto.mail;
+package ru.fe.crypto.mail.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import ru.fe.crypto.mail.*;
 import ru.fe.crypto.mail.impl.CryptoFactoryImpl;
 import ru.fe.crypto.mail.impl.KeyData;
 
@@ -29,7 +30,7 @@ public final class Test1 {
 
         {
             MimeMessage message = SMimeSend.createMessage(
-                factory, SMimeSend.createFakeSession(), "Windows-1251", src, "Comment",
+                factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
                 new SignKey[] {key1.getSignKey()}, null, true
             );
             message.writeTo(System.out);
@@ -39,14 +40,14 @@ public final class Test1 {
         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++");
         {
             PartBuilder builder = new PartBuilder(factory, "Windows-1251");
-            MimeBodyPart filePart = builder.create(src, "text/plain", "Comment");
+            MimeBodyPart filePart = builder.createFile(src, "text/plain", "Comment");
 //            MimeBodyPart signed = builder.sign(filePart, key1.getSignKey());
             MimeBodyPart signed = filePart;
             for (int i = 0; i < 4; i++) {
                 signed = builder.signDetached(signed, key1.getSignKey());
             }
 //            MimeBodyPart encrypted = builder.encrypt(signed, key1.getEncryptKey());
-            MimeMessage message = PartBuilder.toMessage(SMimeSend.createFakeSession(), signed);
+            MimeMessage message = PartBuilder.toMessage(SMimeReceive.createFakeSession(), signed);
             message.writeTo(System.out);
             System.out.flush();
             Test.check(factory, message);

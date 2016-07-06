@@ -1,7 +1,8 @@
-package ru.fe.crypto.mail;
+package ru.fe.crypto.mail.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import ru.fe.crypto.mail.*;
 import ru.fe.crypto.mail.impl.CryptoFactoryImpl;
 import ru.fe.crypto.mail.impl.KeyData;
 
@@ -28,7 +29,7 @@ public final class TestCoSign {
         CryptoFactoryImpl factory = new CryptoFactoryImpl(keys);
         InputStreamSource src = new MemStreamSource("abba.txt", "Xyzzy".getBytes());
 
-        Session session = SMimeSend.createFakeSession();
+        Session session = SMimeReceive.createFakeSession();
         MimeMessage message = SMimeSend.createMessage(
             factory, session, "Windows-1251", src, "Comment",
             new SignKey[] {key1.getSignKey()}, null, true

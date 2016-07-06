@@ -16,10 +16,10 @@ import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Store;
-import ru.fe.common.StreamUtils;
 import ru.fe.crypto.mail.*;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -59,11 +59,17 @@ final class CryptoImpl implements Crypto {
         return sis;
     }
 
+    private static String toString(InputStream in) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        SignedPart.copyStream(in, out);
+        return out.toString(CHARSET.name());
+    }
+
     private static String extractData(CMSSignedDataParser sp) throws IOException {
         InputStream is = sp.getSignedContent().getContentStream();
-        byte[] bytes = StreamUtils.toByteArray(is);
+        String str = toString(is);
         is.close();
-        return new String(bytes, CHARSET);
+        return str;
     }
 
     public SignerData getSigners(InputStream data) throws CryptoException, IOException {
@@ -107,7 +113,7 @@ final class CryptoImpl implements Crypto {
             gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digestCalculatorProvider).build(contentSigner, impl.certificate));
             gen.addCertificates(store);
             CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes(CHARSET)), !detached);
-            return MimeUtil.base64(cms.getEncoded());
+            return Base64.base64(cms.getEncoded());
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (CertificateEncodingException ex) {
@@ -124,7 +130,7 @@ final class CryptoImpl implements Crypto {
             gen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(impl.certificate).setProvider(BC));
             OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build();
             CMSEnvelopedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes(CHARSET)), encryptor);
-            return MimeUtil.base64(cms.getEncoded());
+            return Base64.base64(cms.getEncoded());
         } catch (CertificateEncodingException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (CMSException ex) {
@@ -172,7 +178,7 @@ final class CryptoImpl implements Crypto {
             gen.addCertificates(store);
             gen.addSigners(sp.getSignerInfos());
             CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes(CHARSET)), !detached);
-            return MimeUtil.base64(cms.getEncoded());
+            return Base64.base64(cms.getEncoded());
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (CertificateEncodingException ex) {

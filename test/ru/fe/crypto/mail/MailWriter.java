@@ -164,7 +164,7 @@ final class MailWriter {
         if (src != null) {
             MimeBodyPart plainPart = new MimeBodyPart();
             fillPlain(plainPart, src.getName(), charset, comment);
-            String plainData = MimeUtil.base64(src.open());
+            String plainData = Base64.base64(src.open());
             enveloper = new Enveloper(factory, plainPart, plainData);
         } else {
             enveloper = new Enveloper(factory, originalMsg, null);
@@ -219,7 +219,7 @@ final class MailWriter {
             plainPart = new MimeBodyPart();
             fillPlain(plainPart, src.getName(), charset, comment);
             mp.addBodyPart(plainPart);
-            data = MimeUtil.base64(src.open());
+            data = Base64.base64(src.open());
 
             String text = writeMessage(plainPart, data);
 
@@ -258,7 +258,7 @@ final class MailWriter {
         } else if (rawData != null) {
             los.writeln(rawData);
         } else {
-            los.writeln(MimeUtil.base64(rawSignature.getInputStream()));
+            los.writeln(Base64.base64(rawSignature.getInputStream()));
         }
         los.writeln(boundary);
         writeMessage(los, signPart, signature);

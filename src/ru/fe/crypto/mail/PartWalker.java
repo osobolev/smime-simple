@@ -1,7 +1,5 @@
 package ru.fe.crypto.mail;
 
-import ru.fe.common.StreamUtils;
-
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
@@ -26,7 +24,7 @@ public final class PartWalker {
         this.callback = callback;
     }
 
-    void walk(MimeMessage message) throws MessagingException, IOException, CryptoException {
+    public void walk(MimeMessage message) throws MessagingException, IOException, CryptoException {
         List<SignInfo> noSigners = Collections.emptyList();
         walk(message, noSigners);
     }
@@ -36,14 +34,19 @@ public final class PartWalker {
     }
 
     private static InputStream canonicalize(MimeBodyPart part) throws MessagingException, IOException {
+        // todo: why not part.writeTo???
         BiByteArrayStream bis = new BiByteArrayStream();
         MimeUtil.writeHeaders(part, bis.output());
         InputStream is = part.getRawInputStream(); // todo: why???
-        StreamUtils.copyStreamEoln(is, bis.output());
+        try {
+            MimeUtil.copyStreamEoln(is, bis.output());
+        } finally {
+            MimeUtil.close(is);
+        }
         return bis.input();
     }
 
-    void walk(Part part, List<SignInfo> signed) throws MessagingException, IOException, CryptoException {
+    private void walk(Part part, List<SignInfo> signed) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
             Multipart mp = (Multipart) part.getContent();
             MimeBodyPart part1 = (MimeBodyPart) mp.getBodyPart(0);
@@ -59,7 +62,13 @@ public final class PartWalker {
             }
             InputStream data = canonicalize(dataPart);
             List<SignInfo> newSigned = new ArrayList<SignInfo>(signed);
-            List<SignInfo> signers = getCrypto().getSignersDetached(data, signaturePart.getInputStream());
+            InputStream is = signaturePart.getInputStream();
+            List<SignInfo> signers;
+            try {
+                signers = getCrypto().getSignersDetached(data, is);
+            } finally {
+                MimeUtil.close(is);
+            }
             newSigned.addAll(signers);
             walk(dataPart, newSigned);
         } else if (part.isMimeType("application/pkcs7-mime")) {
@@ -68,13 +77,24 @@ public final class PartWalker {
             List<SignInfo> newSigned;
             String decrypted;
             if ("signed-data".equals(smime)) {
-                Crypto.SignerData sd = getCrypto().getSigners(part.getInputStream());
+                InputStream is = part.getInputStream();
+                Crypto.SignerData sd;
+                try {
+                    sd = getCrypto().getSigners(is);
+                } finally {
+                    MimeUtil.close(is);
+                }
                 newSigned = new ArrayList<SignInfo>(signed);
                 newSigned.addAll(sd.signers);
                 decrypted = sd.data;
             } else {
                 newSigned = signed;
-                decrypted = getCrypto().decryptData(part.getInputStream());
+                InputStream is = part.getInputStream();
+                try {
+                    decrypted = getCrypto().decryptData(is);
+                } finally {
+                    MimeUtil.close(is);
+                }
             }
             walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())), newSigned);
         } else if (part.isMimeType("multipart/*")) {

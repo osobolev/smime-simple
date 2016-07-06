@@ -1,32 +1,16 @@
 package ru.fe.crypto.mail;
 
-import com.sun.mail.util.BASE64EncoderStream;
 import com.sun.mail.util.LineOutputStream;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimePart;
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
 
-public final class MimeUtil {
-
-    public static String base64(byte[] data) throws IOException {
-        return base64(new ByteArrayInputStream(data));
-    }
-
-    static String base64(InputStream is) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        OutputStream os = new BASE64EncoderStream(bos, 64);
-        while (true) {
-            int b = is.read();
-            if (b < 0)
-                break;
-            os.write(b);
-        }
-        os.close();
-        is.close();
-        return bos.toString();
-    }
+final class MimeUtil {
 
     static void writeHeaders(MimePart part, OutputStream os) throws MessagingException, IOException {
         LineOutputStream los = toLOS(os);
@@ -41,5 +25,51 @@ public final class MimeUtil {
 
     static LineOutputStream toLOS(OutputStream os) {
         return os instanceof LineOutputStream ? (LineOutputStream) os : new LineOutputStream(os);
+    }
+
+    /**
+     * Не закрывает потоки!
+     */
+    static void copyStreamEoln(InputStream in, OutputStream out) throws IOException {
+        byte[] arr = new byte[1024];
+        int read;
+        boolean prevR = false;
+        byte[] eoln = {'\r', '\n'};
+        while ((read = in.read(arr)) >= 0) {
+            for (int i = 0; i < read; i++) {
+                byte ch = arr[i];
+                if (prevR) {
+                    if (ch == '\n') {
+                        out.write(eoln);
+                        prevR = false;
+                    } else if (ch == '\r') {
+                        out.write(eoln);
+                    } else {
+                        out.write(eoln);
+                        out.write(ch);
+                        prevR = false;
+                    }
+                } else {
+                    if (ch == '\n') {
+                        out.write(eoln);
+                    } else if (ch == '\r') {
+                        prevR = true;
+                    } else {
+                        out.write(ch);
+                    }
+                }
+            }
+        }
+        if (prevR) {
+            out.write(eoln);
+        }
+    }
+
+    static void close(Closeable c) {
+        try {
+            c.close();
+        } catch (IOException ex) {
+            // ignore
+        }
     }
 }
