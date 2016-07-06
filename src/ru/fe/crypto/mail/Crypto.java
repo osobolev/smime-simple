@@ -51,5 +51,10 @@ public interface Crypto {
 
     // Co-sign:
 
-    String cosignData(String data, String signature, SignKey key, boolean detached) throws CryptoException, IOException;
+    /**
+     * @param data raw data to co-sign (must be ASCII). If null then signature contains both data and signature.
+     * @param signature raw data (if data is null then data+signature, else detached signature)
+     * @return BASE64-encoded signature
+     */
+    String cosignData(String data, InputStream signature, SignKey key, boolean detached) throws CryptoException, IOException;
 }

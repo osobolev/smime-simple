@@ -27,6 +27,7 @@ public final class CoSignWalker {
         return factory.getCrypto();
     }
 
+    // todo: dup code
     private static InputStream canonicalize(MimeBodyPart part) throws MessagingException, IOException {
         BiByteArrayStream bis = new BiByteArrayStream();
         MimeUtil.writeHeaders(part, bis.output());
@@ -50,21 +51,24 @@ public final class CoSignWalker {
                 dataPart = part1;
             }
             InputStream data = canonicalize(dataPart);
-            String cosigned = getCrypto().cosignData(null, null, addKey, false); // todo
-            // todo: rebuild new part with new signature!
+            String cosigned = getCrypto().cosignData(null, null, addKey, true); // todo
+            MimeMultipart newMp = new MimeMultipart();
+            newMp.addBodyPart(dataPart);
+            // todo: add new signed part
+            part.setContent(newMp);
             return part;
         } else if (part.isMimeType("application/pkcs7-mime")) {
             ContentType contentType = new ContentType(part.getContentType());
             String smime = contentType.getParameter("smime-type");
-            String decrypted;
             if ("signed-data".equals(smime)) {
-                Crypto.SignerData sd = getCrypto().getSigners(part.getInputStream());
-                decrypted = sd.data;
+                String cosigned = getCrypto().cosignData(null, null, addKey, false); // todo
+                // todo: rebuild new part with new signature!
+                return part;
             } else {
-                decrypted = getCrypto().decryptData(part.getInputStream());
+                String decrypted = getCrypto().decryptData(part.getInputStream());
+                // todo: remove old encryption, add new if necessary (bc this is a message for new receiver with new key)
+                return walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())));
             }
-            walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())));
-            return null; // todo
         } else if (part.isMimeType("multipart/*")) {
             Multipart mp = (Multipart) part.getContent();
             MimeMultipart newMp = null;

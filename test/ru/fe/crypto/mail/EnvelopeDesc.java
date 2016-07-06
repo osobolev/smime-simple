@@ -1,5 +1,7 @@
 package ru.fe.crypto.mail;
 
+import javax.mail.Part;
+
 final class EnvelopeDesc {
 
     static final int ENCRYPT = 0;
@@ -10,7 +12,7 @@ final class EnvelopeDesc {
     final SignKey signKey;
     final EncryptKey encryptKey;
     final String rawData;
-    final String rawSignature;
+    final Part rawSignature;
 
     EnvelopeDesc(int type, SignKey signKey, EncryptKey encryptKey) {
         this.type = type;
@@ -20,7 +22,7 @@ final class EnvelopeDesc {
         this.encryptKey = encryptKey;
     }
 
-    EnvelopeDesc(String rawData, String rawSignature, SignKey key) {
+    EnvelopeDesc(String rawData, Part rawSignature, SignKey key) {
         this.type = COSIGN;
         this.rawData = rawData;
         this.rawSignature = rawSignature;

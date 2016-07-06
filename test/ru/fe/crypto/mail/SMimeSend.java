@@ -33,10 +33,10 @@ public final class SMimeSend {
     public static MimeMessage cosignMessage(CryptoFactory factory, Session session, MimeMessage message,
                                             SignKey[] signCerts, EncryptKey encryptCert) throws CryptoException, IOException, MessagingException {
         SignedPart sp = MailReader.decrypt(factory, message, true);
-        if (sp.rawData == null)
+        if (sp.rawSignature == null)
             return null;
         MimeMessage msg = new MimeMessage(session);
-        String data = MailWriter.fillMessage(factory, msg, message, null, null, null, sp, signCerts, encryptCert, sp.rawSignature != null);
+        String data = MailWriter.fillMessage(factory, msg, message, null, null, null, sp, signCerts, encryptCert, sp.rawData != null);
         return MailWriter.finalizeMessage(session, msg, data);
     }
 }

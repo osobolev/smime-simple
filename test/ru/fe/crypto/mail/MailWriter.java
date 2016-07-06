@@ -47,7 +47,7 @@ final class MailWriter {
                               SignKey[] signCerts, EncryptKey encryptCert, boolean detachSignature) throws MessagingException, IOException, CryptoException {
         boolean createMultipart;
         if (detachSignature) {
-            if (sp != null && sp.rawSignature == null) {
+            if (sp != null && sp.rawData == null) {
                 createMultipart = false;
             } else {
                 createMultipart = encryptCert == null && signCerts != null && signCerts.length == 1;
@@ -105,8 +105,8 @@ final class MailWriter {
             String smime;
             if (envelope.type == EnvelopeDesc.COSIGN) {
                 String cosignedData;
-                if (envelope.rawSignature == null) {
-                    cosignedData = getCrypto().cosignData("", envelope.rawData, envelope.signKey, false);
+                if (envelope.rawData == null) {
+                    cosignedData = getCrypto().cosignData(null, envelope.rawSignature.getInputStream(), envelope.signKey, false);
                 } else {
                     HeadersWithData hwd = signedMultipart(
                         null, factory, null, null, null, envelope.rawData, envelope.rawSignature, envelope.signKey
@@ -208,7 +208,7 @@ final class MailWriter {
 
     private static HeadersWithData signedMultipart(String preamble, CryptoFactory factory,
                                                    String charset, InputStreamSource src, String comment,
-                                                   String rawData, String rawSignature,
+                                                   String rawData, Part rawSignature,
                                                    SignKey signCert) throws IOException, MessagingException, CryptoException {
         MimeMultipart mp = new MimeMultipart("signed; protocol=\"application/pkcs7-signature\"");
 
@@ -227,7 +227,7 @@ final class MailWriter {
         } else {
             plainPart = null;
             data = null;
-            signature = factory.getCrypto().cosignData(rawData, rawSignature, signCert, true);
+            signature = factory.getCrypto().cosignData(rawData, rawSignature.getInputStream(), signCert, true);
         }
 
         MimeBodyPart signPart = new MimeBodyPart();
@@ -255,8 +255,10 @@ final class MailWriter {
         if (plainPart != null && data != null) {
             writeMessage(los, plainPart, data);
             los.writeln();
-        } else {
+        } else if (rawData != null) {
             los.writeln(rawData);
+        } else {
+            los.writeln(MimeUtil.base64(rawSignature.getInputStream()));
         }
         los.writeln(boundary);
         writeMessage(los, signPart, signature);

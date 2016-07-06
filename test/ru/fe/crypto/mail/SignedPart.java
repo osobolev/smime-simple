@@ -17,11 +17,11 @@ public final class SignedPart {
     public final SignInfo[] signatures;
     public final Part dataPart;
     final String rawData;
-    final String rawSignature;
+    final Part rawSignature;
     public final Throwable error;
 
     SignedPart(MimeMessage message, MimePart dataPart, SignInfo[] signatures,
-               String rawData, String rawSignature, Throwable error) {
+               String rawData, Part rawSignature, Throwable error) {
         this.message = message;
         this.dataPart = dataPart;
         this.signatures = signatures;
@@ -30,11 +30,11 @@ public final class SignedPart {
         this.error = error;
     }
 
-    SignedPart(Message message, Part dataPart, List<SignInfo> signatures, String rawData, String rawSignature) throws IOException, MessagingException {
+    SignedPart(Message message, Part dataPart, List<SignInfo> signatures, String rawData, Part rawSignature) throws IOException, MessagingException {
         this(message, dataPart, signatures.toArray(new SignInfo[signatures.size()]), rawData, rawSignature, null);
     }
 
-    SignedPart(Message message, Part dataPart, SignInfo[] signatures, String rawData, String rawSignature, Throwable error) throws IOException, MessagingException {
+    SignedPart(Message message, Part dataPart, SignInfo[] signatures, String rawData, Part rawSignature, Throwable error) throws IOException, MessagingException {
         this.message = message;
         this.dataPart = dataPart;
         StreamUtils.copyStream(dataPart.getInputStream(), new OutputStream() {

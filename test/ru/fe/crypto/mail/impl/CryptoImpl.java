@@ -153,24 +153,24 @@ final class CryptoImpl implements Crypto {
         }
     }
 
-    public String cosignData(String data, String signature, SignKey key, boolean detached) throws CryptoException, IOException {
+    public String cosignData(String data, InputStream signature, SignKey key, boolean detached) throws CryptoException, IOException {
         SignKeyImpl impl = (SignKeyImpl) key;
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
         try {
             DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
             CMSSignedDataParser sp;
-            InputStream sigBytes = unbase64(signature);
-            if (detached) {
-                sp = new CMSSignedDataParser(digestCalculatorProvider, new CMSTypedStream(new ByteArrayInputStream(data.getBytes(CHARSET))), sigBytes);
+            if (data != null) {
+                sp = new CMSSignedDataParser(digestCalculatorProvider, new CMSTypedStream(raw(data)), signature);
             } else {
-                sp = new CMSSignedDataParser(digestCalculatorProvider, sigBytes);
+                sp = new CMSSignedDataParser(digestCalculatorProvider, signature);
                 data = extractData(sp);
             }
             Store<?> store = new JcaCertStore(Collections.singletonList(impl.certificate));
             ContentSigner contentSigner = new JcaContentSignerBuilder(KeyData.ALGORITHM).setProvider(BC).build(impl.key);
             gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digestCalculatorProvider).build(contentSigner, impl.certificate));
-            gen.addCertificates(store);
             gen.addCertificates(sp.getCertificates());
+            gen.addCertificates(store);
+            gen.addSigners(sp.getSignerInfos());
             CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes(CHARSET)), !detached);
             return MimeUtil.base64(cms.getEncoded());
         } catch (CMSException ex) {
@@ -228,15 +228,16 @@ final class CryptoImpl implements Crypto {
             String data = "ABBA";
             boolean detached = true;
             String sdetached = crypto.signData(data, key1.getSignKey(), detached);
-            String cosigned = crypto.cosignData(data, sdetached, key1.getSignKey(), detached);
+            String cosigned = crypto.cosignData(data, unbase64(sdetached), key2.getSignKey(), detached);
             List<SignInfo> signers = crypto.getSignersDetached(raw(data), unbase64(cosigned));
             System.out.println(signers);
         }
+        // todo: can cosign data detached which is signed undetached and v/v?
         {
             String data = "ABBA";
             boolean detached = false;
             String sundetached = crypto.signData(data, key1.getSignKey(), detached);
-            String cosigned = crypto.cosignData(null, sundetached, key1.getSignKey(), detached);
+            String cosigned = crypto.cosignData(null, unbase64(sundetached), key2.getSignKey(), detached);
             SignerData signers = crypto.getSigners(unbase64(cosigned));
             System.out.println(signers.data);
             System.out.println(signers.signers);

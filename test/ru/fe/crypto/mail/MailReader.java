@@ -54,7 +54,7 @@ final class MailReader {
 
         private SignedPart encSign() throws MessagingException, IOException, CryptoException {
             MimePart current = msg;
-            String rawData = null;
+            Part rawData = null;
             while (true) {
                 if (current.isMimeType("application/pkcs7-mime")) {
                     ContentType contentType = new ContentType(current.getContentType());
@@ -64,7 +64,7 @@ final class MailReader {
                     if ("signed-data".equals(smime)) {
                         Crypto.SignerData sd = instance.getSigners(current.getInputStream());
                         if (needRaw) {
-                            rawData = MimeUtil.base64(current.getInputStream());
+                            rawData = current;
                         }
 
                         certificates.addAll(sd.signers);
@@ -82,7 +82,7 @@ final class MailReader {
                     if (attachment == null) {
                         attachment = current;
                     }
-                    return new SignedPart(msg, attachment, certificates, rawData, null);
+                    return new SignedPart(msg, attachment, certificates, null, rawData);
                 }
             }
         }
@@ -128,7 +128,7 @@ final class MailReader {
                 attachmentPart = dataPart;
             }
             if (needRaw) {
-                return new SignedPart(msg, attachmentPart, certificates, bis.toString(), MimeUtil.base64(signaturePart.getInputStream()));
+                return new SignedPart(msg, attachmentPart, certificates, bis.toString(), signaturePart);
             } else {
                 return new SignedPart(msg, attachmentPart, certificates, null, null);
             }
