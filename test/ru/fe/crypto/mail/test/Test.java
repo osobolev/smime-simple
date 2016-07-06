@@ -19,7 +19,7 @@ public final class Test {
         }
         RandomMessageBuilder randomBuilder = new RandomMessageBuilder(keys);
 
-        Random rnd = new Random();
+        Random rnd = new Random(0);
         for (int i = 0; i < 1000; i++) {
             System.out.println(i + 1);
             RandomMessage rm = randomBuilder.create(rnd);

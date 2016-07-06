@@ -191,7 +191,9 @@ public final class PartBuilder {
         MimeUtil.writeHeaders(message, los);
         MimeUtil.copyStreamEoln(data, los);
         los.flush();
-        return new MimeMessage(session, bis.input());
+        MimeMessage newMessage = new MimeMessage(session, bis.input());
+        newMessage.saveChanges();
+        return newMessage;
     }
 
     public static MimeMessage toMessage(Session session, MimeBodyPart part) throws MessagingException, IOException {
@@ -217,5 +219,20 @@ public final class PartBuilder {
                 MimeUtil.close(is);
             }
         }
+    }
+
+    public static MimeBodyPart messageToPart(MimeMessage message) throws IOException, MessagingException {
+        message.saveChanges();
+        BiByteArrayStream bis = new BiByteArrayStream();
+        message.writeTo(bis.output());
+        MimeBodyPart mbp = new MimeBodyPart(bis.input());
+        Enumeration<?> extraHeaders = mbp.getNonMatchingHeaders(new String[] {
+            CONTENT_TYPE, CONTENT_TRANSFER_ENCODING, "Content-Description", "Content-Disposition"
+        });
+        while (extraHeaders.hasMoreElements()) {
+            Header header = (Header) extraHeaders.nextElement();
+            mbp.removeHeader(header.getName());
+        }
+        return mbp;
     }
 }

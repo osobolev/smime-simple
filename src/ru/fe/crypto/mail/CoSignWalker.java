@@ -8,7 +8,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-// todo: simple sign, if not signed before
 public final class CoSignWalker {
 
     private final CryptoFactory factory;
@@ -22,17 +21,32 @@ public final class CoSignWalker {
     }
 
     public MimeMessage walk(Session session, MimeMessage message) throws MessagingException, IOException, CryptoException {
-        MimePart part = walk(message);
-        MimeMessage cosigned;
-        if (part instanceof MimeBodyPart) {
-            MimeBodyPart mbp = (MimeBodyPart) part;
-            cosigned = PartBuilder.toMessage(session, mbp);
-        } else {
-            cosigned = message;
+        return walk(session, message, null);
+    }
+
+    // todo: return opaque object with extractors???
+    public MimeMessage walk(Session session, MimeMessage message, EncryptKey addEncrypt) throws MessagingException, IOException, CryptoException {
+        boolean[] signed = new boolean[1];
+        MimePart part = walk(message, signed);
+        if (part instanceof MimeMessage && signed[0] && addEncrypt == null) {
+            MimeMessage cosigned = (MimeMessage) part;
+            cosigned.saveChanges();
+            return cosigned;
         }
-        cosigned.saveChanges();
-        // todo: add new encryption if necessary
-        return cosigned;
+        MimeBodyPart mbp;
+        if (part instanceof MimeBodyPart) {
+            mbp = (MimeBodyPart) part;
+        } else {
+            mbp = PartBuilder.messageToPart(message);
+        }
+        // todo: order of operations???
+        if (!signed[0]) {
+            mbp = builder.sign(mbp, addKey); // todo: detached/undetached???
+        }
+        if (addEncrypt != null) {
+            mbp = builder.encrypt(mbp, addEncrypt);
+        }
+        return PartBuilder.toMessage(session, mbp);
     }
 
     private Crypto getCrypto() {
@@ -40,14 +54,16 @@ public final class CoSignWalker {
     }
 
     @SuppressWarnings("TailRecursion")
-    private MimePart walk(MimePart part) throws MessagingException, IOException, CryptoException {
+    private MimePart walk(MimePart part, boolean[] signed) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
+            signed[0] = true;
             builder.cosignDetached(part, addKey);
             return part;
         } else if (part.isMimeType("application/pkcs7-mime")) {
             ContentType contentType = new ContentType(part.getContentType());
             String smime = contentType.getParameter("smime-type");
             if ("signed-data".equals(smime)) {
+                signed[0] = true;
                 return builder.cosign(part, addKey);
             } else {
                 InputStream is = part.getInputStream();
@@ -57,7 +73,7 @@ public final class CoSignWalker {
                 } finally {
                     MimeUtil.close(is);
                 }
-                return walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())));
+                return walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())), signed);
             }
         } else if (part.isMimeType("multipart/*")) {
             Multipart mp = (Multipart) part.getContent();
@@ -65,7 +81,7 @@ public final class CoSignWalker {
             int count = mp.getCount();
             for (int i = 0; i < count; i++) {
                 MimeBodyPart child = (MimeBodyPart) mp.getBodyPart(i);
-                MimeBodyPart newChild = (MimeBodyPart) walk(child);
+                MimeBodyPart newChild = (MimeBodyPart) walk(child, signed);
                 if (newMp != null) {
                     newMp.addBodyPart(newChild);
                 } else if (!child.equals(newChild)) {
