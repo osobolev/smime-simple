@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+// todo: simple sign, if not signed before
 public final class CoSignWalker {
 
     private final CryptoFactory factory;

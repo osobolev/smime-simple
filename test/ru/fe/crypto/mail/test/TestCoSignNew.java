@@ -9,6 +9,7 @@ import ru.fe.crypto.mail.impl.KeyData;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.Session;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -27,15 +28,16 @@ public final class TestCoSignNew {
         KeyData key2 = KeyData.create(2);
         List<KeyData> keys = Arrays.asList(key1, key2);
         CryptoFactoryImpl factory = new CryptoFactoryImpl(keys);
-        InputStreamSource src = new MemStreamSource("abba.txt", "Xyzzy".getBytes());
+        InputStreamSource src = RandomMessageBuilder.SOURCE;
 
         Session session = SMimeReceive.createFakeSession();
-        MimeMessage message = SMimeSend.createMessage(
-            factory, session, "Windows-1251", src, "Comment",
-            new SignKey[] {key1.getSignKey()}, null, true
-        );
 
-        CoSignWalker walker = new CoSignWalker(factory, new PartBuilder(factory, "Windows-1251"), key2.getSignKey());
+        PartBuilder builder = new PartBuilder(factory, "Windows-1251");
+        MimeBodyPart file = builder.createFile(src, "text/plain", "Comment");
+        MimeBodyPart signed = builder.sign(file, key1.getSignKey(), true);
+        MimeMessage message = PartBuilder.toMessage(session, signed);
+
+        CoSignWalker walker = new CoSignWalker(factory, builder, key2.getSignKey());
         MimeMessage cosigned = walker.walk(session, message);
         cosigned.writeTo(System.out);
         System.out.flush();

@@ -2,7 +2,10 @@ package ru.fe.crypto.mail.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
-import ru.fe.crypto.mail.*;
+import ru.fe.crypto.mail.CryptoException;
+import ru.fe.crypto.mail.InputStreamSource;
+import ru.fe.crypto.mail.PartBuilder;
+import ru.fe.crypto.mail.SMimeReceive;
 import ru.fe.crypto.mail.impl.CryptoFactoryImpl;
 import ru.fe.crypto.mail.impl.KeyData;
 
@@ -26,16 +29,16 @@ public final class Test1 {
         KeyData key2 = KeyData.create(2);
         List<KeyData> keys = Arrays.asList(key1, key2);
         CryptoFactoryImpl factory = new CryptoFactoryImpl(keys);
-        InputStreamSource src = new MemStreamSource("abba.txt", "Xyzzy".getBytes());
+        InputStreamSource src = RandomMessageBuilder.SOURCE;
 
-        {
-            MimeMessage message = SMimeSend.createMessage(
-                factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
-                new SignKey[] {key1.getSignKey()}, null, true
-            );
-            message.writeTo(System.out);
-            System.out.flush();
-        }
+//        {
+//            MimeMessage message = SMimeSend.createMessage(
+//                factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
+//                new SignKey[] {key1.getSignKey()}, null, true
+//            );
+//            message.writeTo(System.out);
+//            System.out.flush();
+//        }
 
         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++");
         {
@@ -46,7 +49,7 @@ public final class Test1 {
             MimeMessage message = PartBuilder.toMessage(SMimeReceive.createFakeSession(), signed);
             message.writeTo(System.out);
             System.out.flush();
-            Test.check(factory, message);
+            RandomMessageBuilder.check(factory, message);
         }
     }
 }

@@ -72,6 +72,14 @@ public final class PartBuilder {
         return createPart(encryptedData, "enveloped-data");
     }
 
+    public MimeBodyPart sign(BodyPart part, SignKey key, boolean detached) throws MessagingException, IOException, CryptoException {
+        if (detached) {
+            return signDetached(part, key);
+        } else {
+            return sign(part, key);
+        }
+    }
+
     public MimeBodyPart sign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         String data = partToString(part);
         String signedData = getCrypto().signData(data, key, false);

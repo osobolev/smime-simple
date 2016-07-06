@@ -27,7 +27,7 @@ public final class TestCoSign {
         KeyData key2 = KeyData.create(2);
         List<KeyData> keys = Arrays.asList(key1, key2);
         CryptoFactoryImpl factory = new CryptoFactoryImpl(keys);
-        InputStreamSource src = new MemStreamSource("abba.txt", "Xyzzy".getBytes());
+        InputStreamSource src = RandomMessageBuilder.SOURCE;
 
         Session session = SMimeReceive.createFakeSession();
         MimeMessage message = SMimeSend.createMessage(

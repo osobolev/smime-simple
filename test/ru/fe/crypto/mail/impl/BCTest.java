@@ -12,7 +12,7 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import ru.fe.crypto.mail.CryptoException;
-import ru.fe.crypto.mail.test.Test;
+import ru.fe.crypto.mail.test.RandomMessageBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -54,6 +54,6 @@ public final class BCTest {
         message.saveChanges();
         message.writeTo(System.out);
         System.out.flush();
-        Test.check(new CryptoFactoryImpl(Collections.singletonList(key1)), message);
+        RandomMessageBuilder.check(new CryptoFactoryImpl(Collections.singletonList(key1)), message);
     }
 }
