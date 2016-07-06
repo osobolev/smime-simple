@@ -18,11 +18,9 @@ public final class PartBuilder {
     private static final String BASE64 = "base64";
 
     private final CryptoFactory factory;
-    private final String charset;
 
-    public PartBuilder(CryptoFactory factory, String charset) {
+    public PartBuilder(CryptoFactory factory) {
         this.factory = factory;
-        this.charset = charset;
     }
 
     private static MimeBodyPart createPart(MimePart headers, String base64) throws MessagingException, IOException {
@@ -98,9 +96,7 @@ public final class PartBuilder {
 
     private static MimeMultipart createSignedMultipart(BodyPart dataPart, String signature, String preamble) throws MessagingException, IOException {
         MimeMultipart mp = new MimeMultipart("signed; protocol=\"application/pkcs7-signature\"");
-        if (preamble != null) {
-            mp.setPreamble(preamble);
-        }
+        mp.setPreamble(preamble);
         mp.addBodyPart(dataPart);
         mp.addBodyPart(createCryptoPart("application/pkcs7-signature", "smime.p7s", signature));
         return mp;
@@ -141,9 +137,8 @@ public final class PartBuilder {
         part.setContent(newMp);
     }
 
-    public MimeBodyPart createText(String text) throws MessagingException {
+    public static MimeBodyPart createText(String text, String charset) throws MessagingException {
         MimeBodyPart part = new MimeBodyPart();
-        part.setHeader(CONTENT_TYPE, "text/plain");
         part.setText(text, charset);
         return part;
     }
@@ -155,9 +150,7 @@ public final class PartBuilder {
     public static MimeBodyPart createMulti(String preamble, BodyPart... parts) throws MessagingException {
         MimeBodyPart complexPart = new MimeBodyPart();
         MimeMultipart mp = new MimeMultipart();
-        if (preamble != null) {
-            mp.setPreamble(preamble);
-        }
+        mp.setPreamble(preamble);
         for (BodyPart part : parts) {
             mp.addBodyPart(part);
         }
@@ -165,7 +158,7 @@ public final class PartBuilder {
         return complexPart;
     }
 
-    public MimeBodyPart createFile(InputStreamSource src, String contentType, String comment) throws MessagingException, IOException {
+    public static MimeBodyPart createFile(InputStreamSource src, String contentType, String charset, String comment) throws MessagingException, IOException {
         MimeBodyPart filePart = new MimeBodyPart();
         String headers = src.getName();
         filePart.setDescription(comment);

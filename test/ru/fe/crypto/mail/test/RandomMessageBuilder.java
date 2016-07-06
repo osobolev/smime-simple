@@ -28,7 +28,7 @@ public final class RandomMessageBuilder {
     RandomMessageBuilder(List<KeyData> keys) {
         this.keys = keys;
         this.factory = new CryptoFactoryImpl(keys);
-        this.builder = new PartBuilder(factory, "Windows-1251");
+        this.builder = new PartBuilder(factory);
     }
 
     RandomMessage create(Random rnd) throws MessagingException, IOException, CryptoException {
@@ -39,7 +39,7 @@ public final class RandomMessageBuilder {
         boolean signed = false;
         if (isNew) {
             buf.append("New");
-            MimeBodyPart filePart = builder.createFile(SOURCE, "text/plain", "Comment");
+            MimeBodyPart filePart = PartBuilder.createFile(SOURCE, "text/plain", "Windows-1251", "Comment");
             int envelopes = rnd.nextInt(5);
             MimeBodyPart current = filePart;
             boolean wasDetached = false;
@@ -117,7 +117,7 @@ public final class RandomMessageBuilder {
             MimeMessage cosigned = SMimeSend.cosignMessage(factory, session, rm.message, new SignKey[] {signKey}, null);
             return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Old cosigned " + k, true);
         } else {
-            MimeMessage cosigned = new CoSignWalker(factory, builder, signKey).walk(session, rm.message);
+            MimeMessage cosigned = new CoSignWalker(factory, signKey).walk(session, rm.message);
             return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Cosigned " + k, true);
         }
     }

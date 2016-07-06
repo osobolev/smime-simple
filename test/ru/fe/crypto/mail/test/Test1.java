@@ -42,8 +42,8 @@ public final class Test1 {
 
         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++");
         {
-            PartBuilder builder = new PartBuilder(factory, "Windows-1251");
-            MimeBodyPart filePart = builder.createFile(src, "text/plain", "Comment");
+            PartBuilder builder = new PartBuilder(factory);
+            MimeBodyPart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
             MimeBodyPart signed = builder.signDetached(filePart, key1.getSignKey());
 //            MimeBodyPart encrypted = builder.encrypt(signed, key1.getEncryptKey());
             MimeMessage message = PartBuilder.toMessage(SMimeReceive.createFakeSession(), signed);

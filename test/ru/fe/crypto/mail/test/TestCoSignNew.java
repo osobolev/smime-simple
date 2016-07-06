@@ -32,12 +32,12 @@ public final class TestCoSignNew {
 
         Session session = SMimeReceive.createFakeSession();
 
-        PartBuilder builder = new PartBuilder(factory, "Windows-1251");
-        MimeBodyPart file = builder.createFile(src, "text/plain", "Comment");
+        PartBuilder builder = new PartBuilder(factory);
+        MimeBodyPart file = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
         MimeBodyPart signed = builder.sign(file, key1.getSignKey(), true);
         MimeMessage message = PartBuilder.toMessage(session, signed);
 
-        CoSignWalker walker = new CoSignWalker(factory, builder, key2.getSignKey());
+        CoSignWalker walker = new CoSignWalker(factory, key2.getSignKey());
         MimeMessage cosigned = walker.walk(session, message);
         cosigned.writeTo(System.out);
         System.out.flush();

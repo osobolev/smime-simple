@@ -14,9 +14,9 @@ public final class CoSignWalker {
     private final PartBuilder builder;
     private final SignKey addKey;
 
-    public CoSignWalker(CryptoFactory factory, PartBuilder builder, SignKey addKey) {
+    public CoSignWalker(CryptoFactory factory, SignKey addKey) {
         this.factory = factory;
-        this.builder = builder;
+        this.builder = new PartBuilder(factory);
         this.addKey = addKey;
     }
 
@@ -39,7 +39,6 @@ public final class CoSignWalker {
         } else {
             mbp = PartBuilder.messageToPart(message);
         }
-        // todo: order of operations???
         if (!signed[0]) {
             mbp = builder.sign(mbp, addKey); // todo: detached/undetached???
         }
