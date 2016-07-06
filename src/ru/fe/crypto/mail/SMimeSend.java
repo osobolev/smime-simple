@@ -27,7 +27,7 @@ public final class SMimeSend {
 
     public static Session createFakeSession() {
         Properties props = new Properties();
-        return Session.getDefaultInstance(props, null);
+        return Session.getDefaultInstance(props);
     }
 
     public static MimeMessage cosignMessage(CryptoFactory factory, Session session, MimeMessage message,

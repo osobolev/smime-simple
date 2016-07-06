@@ -37,7 +37,7 @@ public final class PartWalker {
         BiByteArrayStream bis = new BiByteArrayStream();
         MimeUtil.writeHeaders(part, bis.output());
         InputStream is = part.getRawInputStream(); // todo: why???
-        StreamUtils.copyStreamEoln(is, bis.output()); // todo: WTF???
+        StreamUtils.copyStreamEoln(is, bis.output());
         return bis.input();
     }
 
@@ -57,18 +57,7 @@ public final class PartWalker {
             }
             InputStream data = canonicalize(dataPart);
             List<SignInfo> newSigned = new ArrayList<SignInfo>(signed);
-            List<SignInfo> signers;
-            try {
-                signers = getCrypto().getSignersDetached(data, signaturePart.getInputStream());
-            } catch (Exception ex) {
-                byte[] bytes = StreamUtils.toByteArray(dataPart.getRawInputStream());
-                OutputStream os = new FileOutputStream("C:\\temp\\test.txt");
-                os.write(bytes);
-                os.close();
-                String str = new String(StreamUtils.toByteArray(canonicalize(dataPart)));
-                System.out.println("Verified data:\n" + str);
-                throw new IOException(ex);
-            }
+            List<SignInfo> signers = getCrypto().getSignersDetached(data, signaturePart.getInputStream());
             newSigned.addAll(signers);
             walk(dataPart, newSigned);
         } else if (part.isMimeType("application/pkcs7-mime")) {
