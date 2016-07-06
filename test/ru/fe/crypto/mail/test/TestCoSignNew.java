@@ -35,7 +35,7 @@ public final class TestCoSignNew {
             new SignKey[] {key1.getSignKey()}, null, true
         );
 
-        CoSignWalker walker = new CoSignWalker(factory, key2.getSignKey());
+        CoSignWalker walker = new CoSignWalker(factory, new PartBuilder(factory, "Windows-1251"), key2.getSignKey());
         MimeMessage cosigned = walker.walk(session, message);
         cosigned.writeTo(System.out);
         System.out.flush();

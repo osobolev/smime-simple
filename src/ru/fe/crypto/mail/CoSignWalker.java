@@ -14,9 +14,9 @@ public final class CoSignWalker {
     private final PartBuilder builder;
     private final SignKey addKey;
 
-    public CoSignWalker(CryptoFactory factory, SignKey addKey) {
+    public CoSignWalker(CryptoFactory factory, PartBuilder builder, SignKey addKey) {
         this.factory = factory;
-        this.builder = new PartBuilder(factory, "Windows-1251"); // todo: param
+        this.builder = builder;
         this.addKey = addKey;
     }
 
@@ -30,6 +30,7 @@ public final class CoSignWalker {
             cosigned = message;
         }
         cosigned.saveChanges();
+        // todo: add new encryption if necessary
         return cosigned;
     }
 
@@ -37,6 +38,7 @@ public final class CoSignWalker {
         return factory.getCrypto();
     }
 
+    @SuppressWarnings("TailRecursion")
     private MimePart walk(MimePart part) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
             builder.cosignDetached(part, addKey);
@@ -54,7 +56,6 @@ public final class CoSignWalker {
                 } finally {
                     MimeUtil.close(is);
                 }
-                // todo: remove old encryption, add new if necessary (bc this is a message for new receiver with new key)
                 return walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())));
             }
         } else if (part.isMimeType("multipart/*")) {

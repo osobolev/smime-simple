@@ -33,26 +33,19 @@ public final class PartWalker {
         return factory.getCrypto();
     }
 
-    private static InputStream canonicalize(MimeBodyPart part) throws MessagingException, IOException {
-        // todo: why not part.writeTo???
+    private static InputStream canonicalize(Part part) throws MessagingException, IOException {
         BiByteArrayStream bis = new BiByteArrayStream();
-        MimeUtil.writeHeaders(part, bis.output());
-        InputStream is = part.getRawInputStream(); // todo: why???
-        try {
-            MimeUtil.copyStreamEoln(is, bis.output());
-        } finally {
-            MimeUtil.close(is);
-        }
+        PartBuilder.write(part, bis.output());
         return bis.input();
     }
 
     private void walk(Part part, List<SignInfo> signed) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
             Multipart mp = (Multipart) part.getContent();
-            MimeBodyPart part1 = (MimeBodyPart) mp.getBodyPart(0);
-            MimeBodyPart part2 = (MimeBodyPart) mp.getBodyPart(1);
-            MimeBodyPart dataPart;
-            MimeBodyPart signaturePart;
+            Part part1 = mp.getBodyPart(0);
+            Part part2 = mp.getBodyPart(1);
+            Part dataPart;
+            Part signaturePart;
             if (part1.isMimeType("application/pkcs7-signature")) {
                 signaturePart = part1;
                 dataPart = part2;
@@ -60,11 +53,11 @@ public final class PartWalker {
                 signaturePart = part2;
                 dataPart = part1;
             }
-            InputStream data = canonicalize(dataPart);
             List<SignInfo> newSigned = new ArrayList<SignInfo>(signed);
             InputStream is = signaturePart.getInputStream();
             List<SignInfo> signers;
             try {
+                InputStream data = canonicalize(dataPart);
                 signers = getCrypto().getSignersDetached(data, is);
             } finally {
                 MimeUtil.close(is);

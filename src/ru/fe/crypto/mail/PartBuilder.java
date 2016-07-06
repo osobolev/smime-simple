@@ -5,7 +5,10 @@ import com.sun.mail.util.LineOutputStream;
 
 import javax.mail.*;
 import javax.mail.internet.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
 
 public final class PartBuilder {
@@ -24,7 +27,6 @@ public final class PartBuilder {
         this.charset = charset;
     }
 
-    // todo: dup code with next method???
     private static void writeMessage(OutputStream os, MimePart headers, InputStream data) throws MessagingException, IOException {
         LineOutputStream los = MimeUtil.toLOS(os);
         MimeUtil.writeHeaders(headers, los);
@@ -87,7 +89,7 @@ public final class PartBuilder {
         return createPart(signedData, "signed-data");
     }
 
-    public MimeBodyPart signDetached(Part part, SignKey key) throws MessagingException, CryptoException, IOException {
+    public MimeBodyPart signDetached(BodyPart part, SignKey key) throws MessagingException, CryptoException, IOException {
         return signDetached(part, "This is an S/MIME multipart signed message", key);
     }
 
@@ -102,7 +104,7 @@ public final class PartBuilder {
         return new MimeBodyPart(bis.input());
     }
 
-    private static MimeMultipart createSignedMultipart(MimeBodyPart dataPart, String signature, String preamble) throws MessagingException, IOException {
+    private static MimeMultipart createSignedMultipart(BodyPart dataPart, String signature, String preamble) throws MessagingException, IOException {
         MimeMultipart mp = new MimeMultipart("signed; protocol=\"application/pkcs7-signature\"");
         if (preamble != null) {
             mp.setPreamble(preamble);
@@ -112,14 +114,10 @@ public final class PartBuilder {
         return mp;
     }
 
-    public MimeBodyPart signDetached(Part part, String preamble, SignKey key) throws MessagingException, CryptoException, IOException {
+    public MimeBodyPart signDetached(BodyPart part, String preamble, SignKey key) throws MessagingException, CryptoException, IOException {
         String data = partToString(part);
-        MimeBodyPart dataPart;
-        {
-            dataPart = new MimeBodyPart(new ByteArrayInputStream(data.getBytes())); // todo: optimize
-        }
         String signature = getCrypto().signData(data, key, true);
-        MimeMultipart mp = createSignedMultipart(dataPart, signature, preamble);
+        MimeMultipart mp = createSignedMultipart(part, signature, preamble);
         MimeBodyPart complexPart = new MimeBodyPart();
         complexPart.setContent(mp);
         complexPart.setHeader(CONTENT_TYPE, "multipart/signed; protocol=\"application/pkcs7-signature\"");
