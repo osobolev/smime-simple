@@ -12,8 +12,7 @@ import java.util.Enumeration;
 
 final class MimeUtil {
 
-    static void writeHeaders(MimePart part, OutputStream os) throws MessagingException, IOException {
-        LineOutputStream los = toLOS(os);
+    static void writeHeaders(MimePart part, LineOutputStream los) throws MessagingException, IOException {
         Enumeration<?> lines = part.getAllHeaderLines();
         while (lines.hasMoreElements()) {
             String line = (String) lines.nextElement();
@@ -21,10 +20,6 @@ final class MimeUtil {
         }
         los.writeln();
         los.flush();
-    }
-
-    static LineOutputStream toLOS(OutputStream os) {
-        return os instanceof LineOutputStream ? (LineOutputStream) os : new LineOutputStream(os);
     }
 
     /**

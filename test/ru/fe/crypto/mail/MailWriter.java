@@ -276,8 +276,12 @@ final class MailWriter {
         return bos.toString();
     }
 
+    private static LineOutputStream toLOS(OutputStream os) {
+        return os instanceof LineOutputStream ? (LineOutputStream) os : new LineOutputStream(os);
+    }
+
     private static void writeMessage(OutputStream os, MimePart part, String data) throws MessagingException, IOException {
-        LineOutputStream los = MimeUtil.toLOS(os);
+        LineOutputStream los = toLOS(os);
         MimeUtil.writeHeaders(part, los);
         los.write(data.getBytes());
         los.writeln();

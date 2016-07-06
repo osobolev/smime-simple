@@ -27,29 +27,22 @@ public final class PartBuilder {
         this.charset = charset;
     }
 
-    private static void writeMessage(OutputStream os, MimePart headers, InputStream data) throws MessagingException, IOException {
-        LineOutputStream los = MimeUtil.toLOS(os);
-        MimeUtil.writeHeaders(headers, los);
-        MimeUtil.copyStreamEoln(data, los);
-        los.flush();
-    }
-
-    private static void writeMessage(OutputStream os, MimePart headers, String base64) throws MessagingException, IOException {
-        LineOutputStream los = MimeUtil.toLOS(os);
+    private static MimeBodyPart createPart(MimePart headers, String base64) throws MessagingException, IOException {
+        BiByteArrayStream bis = new BiByteArrayStream();
+        LineOutputStream los = new LineOutputStream(bis.output());
         MimeUtil.writeHeaders(headers, los);
         los.writeln(base64); // todo: remove extra eoln???
         los.flush();
+        return new MimeBodyPart(bis.input());
     }
 
-    private static MimeBodyPart createPart(String base64, String smime) throws MessagingException, IOException {
+    private static MimeBodyPart createCryptoPart(String smime, String base64) throws MessagingException, IOException {
         MimeBodyPart headers = new MimeBodyPart();
         headers.setHeader(CONTENT_TYPE, "application/pkcs7-mime; smime-type=\"" + smime + "\"");
         headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
         headers.setDisposition(Part.ATTACHMENT);
         headers.setFileName(ENVELOPE_FILE);
-        BiByteArrayStream bis = new BiByteArrayStream();
-        writeMessage(bis.output(), headers, base64);
-        return new MimeBodyPart(bis.input());
+        return createPart(headers, base64);
     }
 
     private Crypto getCrypto() {
@@ -69,7 +62,7 @@ public final class PartBuilder {
     public MimeBodyPart encrypt(Part part, EncryptKey key) throws CryptoException, IOException, MessagingException {
         String data = partToString(part);
         String encryptedData = getCrypto().encryptData(data, key);
-        return createPart(encryptedData, "enveloped-data");
+        return createCryptoPart("enveloped-data", encryptedData);
     }
 
     public MimeBodyPart sign(BodyPart part, SignKey key, boolean detached) throws MessagingException, IOException, CryptoException {
@@ -83,18 +76,18 @@ public final class PartBuilder {
     public MimeBodyPart sign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         String data = partToString(part);
         String signedData = getCrypto().signData(data, key, false);
-        return createPart(signedData, "signed-data");
+        return createCryptoPart("signed-data", signedData);
     }
 
     public MimeBodyPart cosign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         InputStream is = part.getInputStream();
-        String signedData;
+        String cosignedData;
         try {
-            signedData = getCrypto().cosignData(null, is, key, false);
+            cosignedData = getCrypto().cosignData(null, is, key, false);
         } finally {
             MimeUtil.close(is);
         }
-        return createPart(signedData, "signed-data");
+        return createCryptoPart("signed-data", cosignedData);
     }
 
     public MimeBodyPart signDetached(BodyPart part, SignKey key) throws MessagingException, CryptoException, IOException {
@@ -107,9 +100,7 @@ public final class PartBuilder {
         sigHeader.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
         sigHeader.setDisposition(Part.ATTACHMENT);
         sigHeader.setFileName(SIGNATURE_FILE);
-        BiByteArrayStream bis = new BiByteArrayStream();
-        writeMessage(bis.output(), sigHeader, signature);
-        return new MimeBodyPart(bis.input());
+        return createPart(sigHeader, signature);
     }
 
     private static MimeMultipart createSignedMultipart(BodyPart dataPart, String signature, String preamble) throws MessagingException, IOException {
@@ -190,10 +181,17 @@ public final class PartBuilder {
         ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
         disposition.setParameter("filename", MimeUtility.encodeText(headers, charset, "Q"));
         filePart.setDisposition(disposition.toString());
-        BiByteArrayStream bis = new BiByteArrayStream();
         String base64 = Base64.base64(src.open());
-        writeMessage(bis.output(), filePart, base64);
-        return new MimeBodyPart(bis.input());
+        return createPart(filePart, base64);
+    }
+
+    private static MimeMessage writeMessage(Session session, MimeMessage message, InputStream data) throws MessagingException, IOException {
+        BiByteArrayStream bis = new BiByteArrayStream();
+        LineOutputStream los = new LineOutputStream(bis.output());
+        MimeUtil.writeHeaders(message, los);
+        MimeUtil.copyStreamEoln(data, los);
+        los.flush();
+        return new MimeMessage(session, bis.input());
     }
 
     public static MimeMessage toMessage(Session session, MimeBodyPart part) throws MessagingException, IOException {
@@ -212,14 +210,12 @@ public final class PartBuilder {
                 String line = (String) headers.nextElement();
                 message.addHeaderLine(line);
             }
-            BiByteArrayStream bis = new BiByteArrayStream();
             InputStream is = part.getRawInputStream();
             try {
-                writeMessage(bis.output(), message, is);
+                return writeMessage(session, message, is);
             } finally {
                 MimeUtil.close(is);
             }
-            return new MimeMessage(session, bis.input());
         }
     }
 }
