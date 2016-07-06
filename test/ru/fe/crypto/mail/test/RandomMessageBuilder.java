@@ -132,6 +132,11 @@ public final class RandomMessageBuilder {
         PartWalker partWalker = new PartWalker(factory, new PartCallback() {
             public void leafPart(Part part, List<SignInfo> signed) {
                 foundPart[0] = part;
+                for (SignInfo signInfo : signed) {
+                    if (!signInfo.verified) {
+                        throw new IllegalStateException("Not verified: " + signInfo.info);
+                    }
+                }
             }
         });
         partWalker.walk(message);

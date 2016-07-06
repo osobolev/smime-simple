@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
@@ -33,7 +32,6 @@ import java.util.*;
 
 final class CryptoImpl implements Crypto {
 
-    private static final Charset CHARSET = Charset.defaultCharset();
     private static final String BC = KeyData.BC;
 
     private final List<KeyData> storedKeys;
@@ -42,27 +40,37 @@ final class CryptoImpl implements Crypto {
         this.storedKeys = storedKeys;
     }
 
-    private static List<SignInfo> getSigners(CMSSignedDataParser sp) throws CMSException, OperatorCreationException, CertificateException {
-        List<SignInfo> sis = new ArrayList<SignInfo>();
+    private static SignInfo verify(SignerInformation signer, X509CertificateHolder holder) {
+        boolean ok = false;
+        Exception error = null;
+        try {
+            ok = signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(holder));
+        } catch (Exception ex) {
+            error = ex;
+        }
+        Map<String, String> info = new HashMap<String, String>();
+        info.put("name", holder.getSubject().toString());
+        return new SignInfo(null, info, ok, error);
+
+    }
+
+    private static void getSigners(CMSSignedDataParser sp, List<SignInfo> sis) throws CMSException {
         Store<?> certificates = sp.getCertificates();
         Collection<SignerInformation> signers = sp.getSignerInfos().getSigners();
         for (SignerInformation signer : signers) {
             Collection<?> matches = certificates.getMatches(signer.getSID());
             for (Object match : matches) {
                 X509CertificateHolder holder = (X509CertificateHolder) match;
-                boolean ok = signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(holder));
-                Map<String, String> info = new HashMap<String, String>();
-                info.put("name", holder.getSubject().toString());
-                sis.add(new SignInfo(null, info, ok));
+                SignInfo si = verify(signer, holder);
+                sis.add(si);
             }
         }
-        return sis;
     }
 
     private static String toString(InputStream in) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         SignedPart.copyStream(in, out);
-        return out.toString(CHARSET.name());
+        return out.toString();
     }
 
     private static String extractData(CMSSignedDataParser sp) throws IOException {
@@ -72,33 +80,29 @@ final class CryptoImpl implements Crypto {
         return str;
     }
 
-    public SignerData getSigners(InputStream data) throws CryptoException, IOException {
+    public String getSigners(InputStream data, List<SignInfo> signers) throws CryptoException, IOException {
         try {
             DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
             CMSSignedDataParser sp = new CMSSignedDataParser(digestCalculatorProvider, data);
             String rawData = extractData(sp);
-            List<SignInfo> sis = getSigners(sp);
-            return new SignerData(sis, rawData);
+            getSigners(sp, signers);
+            return rawData;
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (OperatorCreationException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (CertificateException ex) {
             throw new CryptoExceptionImpl(ex);
         }
     }
 
-    public List<SignInfo> getSignersDetached(InputStream data, InputStream signature) throws CryptoException, IOException {
+    public void getSignersDetached(InputStream data, InputStream signature, List<SignInfo> signers) throws CryptoException, IOException {
         try {
             DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
             CMSSignedDataParser sp = new CMSSignedDataParser(digestCalculatorProvider, new CMSTypedStream(data), signature);
             sp.getSignedContent().drain();
-            return getSigners(sp);
+            getSigners(sp, signers);
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (OperatorCreationException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (CertificateException ex) {
             throw new CryptoExceptionImpl(ex);
         }
     }
@@ -112,7 +116,7 @@ final class CryptoImpl implements Crypto {
             DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
             gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digestCalculatorProvider).build(contentSigner, impl.certificate));
             gen.addCertificates(store);
-            CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes(CHARSET)), !detached);
+            CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), !detached);
             return Base64.base64(cms.getEncoded());
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
@@ -129,7 +133,7 @@ final class CryptoImpl implements Crypto {
         try {
             gen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(impl.certificate).setProvider(BC));
             OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build();
-            CMSEnvelopedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes(CHARSET)), encryptor);
+            CMSEnvelopedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), encryptor);
             return Base64.base64(cms.getEncoded());
         } catch (CertificateEncodingException ex) {
             throw new CryptoExceptionImpl(ex);
@@ -150,7 +154,7 @@ final class CryptoImpl implements Crypto {
             for (KeyData storedKey : storedKeys) {
                 if (storedKey.matches(serialNumber)) {
                     Recipient recipient = storedKey.getRecipient();
-                    return new String(ri.getContent(recipient), CHARSET);
+                    return new String(ri.getContent(recipient));
                 }
             }
             throw new CryptoExceptionImpl("Serial number " + serialNumber + " not found for decrypt");
@@ -177,7 +181,7 @@ final class CryptoImpl implements Crypto {
             gen.addCertificates(sp.getCertificates());
             gen.addCertificates(store);
             gen.addSigners(sp.getSignerInfos());
-            CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes(CHARSET)), !detached);
+            CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), !detached);
             return Base64.base64(cms.getEncoded());
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
@@ -189,7 +193,7 @@ final class CryptoImpl implements Crypto {
     }
 
     private static InputStream raw(String str) {
-        return new ByteArrayInputStream(str.getBytes(CHARSET));
+        return new ByteArrayInputStream(str.getBytes());
     }
 
     private static InputStream unbase64(String str) throws IOException {
@@ -220,14 +224,16 @@ final class CryptoImpl implements Crypto {
         }
         {
             String undetached = crypto.signData("ABBA", key1.getSignKey(), false);
-            SignerData signers = crypto.getSigners(unbase64(undetached));
-            System.out.println(signers.data);
-            System.out.println(signers.signers);
+            List<SignInfo> signers = new ArrayList<SignInfo>();
+            String data = crypto.getSigners(unbase64(undetached), signers);
+            System.out.println(data);
+            System.out.println(signers);
         }
         {
             String data = "ABBA";
             String detached = crypto.signData(data, key1.getSignKey(), true);
-            List<SignInfo> dsigners = crypto.getSignersDetached(raw(data), unbase64(detached));
+            List<SignInfo> dsigners = new ArrayList<SignInfo>();
+            crypto.getSignersDetached(raw(data), unbase64(detached), dsigners);
             System.out.println(dsigners);
         }
         {
@@ -235,18 +241,19 @@ final class CryptoImpl implements Crypto {
             boolean detached = true;
             String sdetached = crypto.signData(data, key1.getSignKey(), detached);
             String cosigned = crypto.cosignData(data, unbase64(sdetached), key2.getSignKey(), detached);
-            List<SignInfo> signers = crypto.getSignersDetached(raw(data), unbase64(cosigned));
+            List<SignInfo> signers = new ArrayList<SignInfo>();
+            crypto.getSignersDetached(raw(data), unbase64(cosigned), signers);
             System.out.println(signers);
         }
-        // todo: can cosign data detached which is signed undetached and v/v?
         {
             String data = "ABBA";
             boolean detached = false;
             String sundetached = crypto.signData(data, key1.getSignKey(), detached);
             String cosigned = crypto.cosignData(null, unbase64(sundetached), key2.getSignKey(), detached);
-            SignerData signers = crypto.getSigners(unbase64(cosigned));
-            System.out.println(signers.data);
-            System.out.println(signers.signers);
+            List<SignInfo> signers = new ArrayList<SignInfo>();
+            String sdata = crypto.getSigners(unbase64(cosigned), signers);
+            System.out.println(sdata);
+            System.out.println(signers);
         }
     }
 }

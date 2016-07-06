@@ -55,14 +55,12 @@ public final class PartWalker {
             }
             List<SignInfo> newSigned = new ArrayList<SignInfo>(signed);
             InputStream is = signaturePart.getInputStream();
-            List<SignInfo> signers;
             try {
                 InputStream data = canonicalize(dataPart);
-                signers = getCrypto().getSignersDetached(data, is);
+                getCrypto().getSignersDetached(data, is, newSigned);
             } finally {
                 MimeUtil.close(is);
             }
-            newSigned.addAll(signers);
             walk(dataPart, newSigned);
         } else if (part.isMimeType("application/pkcs7-mime")) {
             ContentType contentType = new ContentType(part.getContentType());
@@ -70,16 +68,13 @@ public final class PartWalker {
             List<SignInfo> newSigned;
             String decrypted;
             if ("signed-data".equals(smime)) {
+                newSigned = new ArrayList<SignInfo>(signed);
                 InputStream is = part.getInputStream();
-                Crypto.SignerData sd;
                 try {
-                    sd = getCrypto().getSigners(is);
+                    decrypted = getCrypto().getSigners(is, newSigned);
                 } finally {
                     MimeUtil.close(is);
                 }
-                newSigned = new ArrayList<SignInfo>(signed);
-                newSigned.addAll(sd.signers);
-                decrypted = sd.data;
             } else {
                 newSigned = signed;
                 InputStream is = part.getInputStream();

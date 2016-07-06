@@ -60,13 +60,12 @@ final class MailReader {
                     String result;
                     Crypto instance = getInstance();
                     if ("signed-data".equals(smime)) {
-                        Crypto.SignerData sd = instance.getSigners(current.getInputStream());
+                        String data = instance.getSigners(current.getInputStream(), certificates);
                         if (needRaw) {
                             rawData = current;
                         }
 
-                        certificates.addAll(sd.signers);
-                        result = sd.data;
+                        result = data;
                     } else {
                         result = instance.decryptData(current.getInputStream());
                     }
@@ -117,9 +116,7 @@ final class MailReader {
 
             BiByteArrayStream bis = new BiByteArrayStream();
             write(dataPart, bis.output());
-            List<SignInfo> signatures = getInstance().getSignersDetached(bis.input(), signaturePart.getInputStream());
-
-            certificates.addAll(signatures);
+            getInstance().getSignersDetached(bis.input(), signaturePart.getInputStream(), certificates);
 
             Part attachmentPart = searchAttachment(dataPart);
             if (attachmentPart == null) {
