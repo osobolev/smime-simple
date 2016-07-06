@@ -7,14 +7,12 @@ import javax.mail.internet.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 
 public final class CoSignWalker {
 
     private final CryptoFactory factory;
     private final PartBuilder builder;
     private final SignKey addKey;
-    // todo: add detached flag???
 
     public CoSignWalker(CryptoFactory factory, SignKey addKey) {
         this.factory = factory;
@@ -39,65 +37,9 @@ public final class CoSignWalker {
         return factory.getCrypto();
     }
 
-    // todo: dup code
-    private static String canonicalize(MimeBodyPart part) throws MessagingException, IOException {
-        // todo: why not part.writeTo???
-        BiByteArrayStream bis = new BiByteArrayStream();
-        MimeUtil.writeHeaders(part, bis.output());
-        InputStream is = part.getRawInputStream(); // todo: why???
-        try {
-            MimeUtil.copyStreamEoln(is, bis.output());
-        } finally {
-            MimeUtil.close(is);
-        }
-        return bis.toString();
-    }
-
-    private static void add(ParameterList params, ContentType type) {
-        ParameterList list = type.getParameterList();
-        Enumeration<?> names = list.getNames();
-        while (names.hasMoreElements()) {
-            String name = (String) names.nextElement();
-            String value = list.get(name);
-            params.set(name, value);
-        }
-    }
-
     private MimePart walk(MimePart part) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
-            ContentType oldContentType = new ContentType(part.getContentType());
-            MimeMultipart mp = (MimeMultipart) part.getContent();
-            MimeBodyPart part1 = (MimeBodyPart) mp.getBodyPart(0);
-            MimeBodyPart part2 = (MimeBodyPart) mp.getBodyPart(1);
-            MimeBodyPart dataPart;
-            MimeBodyPart signaturePart;
-            if (part1.isMimeType("application/pkcs7-signature")) {
-                signaturePart = part1;
-                dataPart = part2;
-            } else {
-                signaturePart = part2;
-                dataPart = part1;
-            }
-            String data = canonicalize(dataPart);
-            InputStream is = signaturePart.getInputStream();
-            String cosigned;
-            try {
-                cosigned = getCrypto().cosignData(data, is, addKey, true);
-            } finally {
-                MimeUtil.close(is);
-            }
-            MimeMultipart newMp = new MimeMultipart(); // todo: reuse PartBuilder code???
-            // todo: set preamble
-            newMp.addBodyPart(dataPart);
-            MimeBodyPart newSignPart = PartBuilder.createSignaturePart(cosigned);
-            newMp.addBodyPart(newSignPart);
-            part.setContent(newMp);
-            ContentType mpContentType = new ContentType(newMp.getContentType());
-            ParameterList params = new ParameterList();
-            add(params, oldContentType);
-            add(params, mpContentType);
-            ContentType newContentType = new ContentType(oldContentType.getPrimaryType(), oldContentType.getSubType(), mpContentType.getParameterList());
-            part.setHeader("Content-Type", newContentType.toString());
+            builder.cosignDetached(part, addKey);
             return part;
         } else if (part.isMimeType("application/pkcs7-mime")) {
             ContentType contentType = new ContentType(part.getContentType());

@@ -86,6 +86,8 @@ public final class Test {
                     buf.append(" Signed " + k);
                     signCerts[j] = keys.get(k).getSignKey();
                 }
+                boolean detach = rnd.nextBoolean();
+                buf.append(" " + (detach ? "Detach" : "No detach"));
                 EncryptKey encryptKey;
                 if (rnd.nextBoolean()) {
                     int k = rnd.nextInt(keys.size());
@@ -94,8 +96,6 @@ public final class Test {
                 } else {
                     encryptKey = null;
                 }
-                boolean detach = rnd.nextBoolean();
-                buf.append(" " + (detach ? "Detach" : "No detach"));
                 message = SMimeSend.createMessage(
                     factory, SMimeReceive.createFakeSession(), "Windows-1251", src, "Comment",
                     signCerts, encryptKey, detach

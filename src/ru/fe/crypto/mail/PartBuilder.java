@@ -91,7 +91,7 @@ public final class PartBuilder {
         return signDetached(part, "This is an S/MIME multipart signed message", key);
     }
 
-    public static MimeBodyPart createSignaturePart(String signature) throws MessagingException, IOException {
+    private static MimeBodyPart createSignaturePart(String signature) throws MessagingException, IOException {
         MimeBodyPart sigHeader = new MimeBodyPart();
         sigHeader.setHeader(CONTENT_TYPE, "application/pkcs7-signature");
         sigHeader.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
@@ -102,27 +102,53 @@ public final class PartBuilder {
         return new MimeBodyPart(bis.input());
     }
 
-    public MimeBodyPart signDetached(Part part, String preamble, SignKey key) throws MessagingException, CryptoException, IOException {
-        MimeBodyPart complexPart = new MimeBodyPart();
+    private static MimeMultipart createSignedMultipart(MimeBodyPart dataPart, String signature, String preamble) throws MessagingException, IOException {
         MimeMultipart mp = new MimeMultipart("signed; protocol=\"application/pkcs7-signature\"");
         if (preamble != null) {
             mp.setPreamble(preamble);
         }
+        mp.addBodyPart(dataPart);
+        mp.addBodyPart(createSignaturePart(signature));
+        return mp;
+    }
+
+    public MimeBodyPart signDetached(Part part, String preamble, SignKey key) throws MessagingException, CryptoException, IOException {
         String data = partToString(part);
         MimeBodyPart dataPart;
         {
             dataPart = new MimeBodyPart(new ByteArrayInputStream(data.getBytes())); // todo: optimize
         }
-        mp.addBodyPart(dataPart);
-        MimeBodyPart signaturePart;
-        {
-            String signature = getCrypto().signData(data, key, true);
-            signaturePart = createSignaturePart(signature);
-        }
-        mp.addBodyPart(signaturePart);
+        String signature = getCrypto().signData(data, key, true);
+        MimeMultipart mp = createSignedMultipart(dataPart, signature, preamble);
+        MimeBodyPart complexPart = new MimeBodyPart();
         complexPart.setContent(mp);
         complexPart.setHeader(CONTENT_TYPE, "multipart/signed; protocol=\"application/pkcs7-signature\"");
         return complexPart;
+    }
+
+    public void cosignDetached(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
+        MimeMultipart mp = (MimeMultipart) part.getContent();
+        MimeBodyPart part1 = (MimeBodyPart) mp.getBodyPart(0);
+        MimeBodyPart part2 = (MimeBodyPart) mp.getBodyPart(1);
+        MimeBodyPart dataPart;
+        MimeBodyPart signaturePart;
+        if (part1.isMimeType("application/pkcs7-signature")) {
+            signaturePart = part1;
+            dataPart = part2;
+        } else {
+            signaturePart = part2;
+            dataPart = part1;
+        }
+        String data = partToString(dataPart);
+        InputStream is = signaturePart.getInputStream();
+        String cosigned;
+        try {
+            cosigned = getCrypto().cosignData(data, is, key, true);
+        } finally {
+            MimeUtil.close(is);
+        }
+        MimeMultipart newMp = createSignedMultipart(dataPart, cosigned, mp.getPreamble());
+        part.setContent(newMp);
     }
 
     public MimeBodyPart createText(String text) throws MessagingException {
