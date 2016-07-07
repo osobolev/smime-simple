@@ -1,13 +1,13 @@
-package smime.test;
+package smime.rand;
 
 import javax.mail.internet.MimeMessage;
 
-final class RandomMessage {
+public final class RandomMessage {
 
-    final MimeMessage message;
-    final boolean oldCompatible;
-    final String description;
-    final boolean signed;
+    public final MimeMessage message;
+    public final boolean oldCompatible;
+    public final String description;
+    public final boolean signed;
 
     RandomMessage(MimeMessage message, boolean oldCompatible, String description, boolean signed) {
         this.message = message;

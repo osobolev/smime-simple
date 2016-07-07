@@ -1,7 +1,11 @@
 package smime.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import smime.EncryptKey;
+import smime.SignKey;
+import smime.impl.CryptoFactoryImpl;
 import smime.impl.KeyData;
+import smime.rand.RandomMessageBuilder;
 
 import java.security.Security;
 import java.util.ArrayList;
@@ -14,18 +18,17 @@ public final class Test {
         Security.addProvider(new BouncyCastleProvider());
 
         List<KeyData> keys = new ArrayList<KeyData>();
+        List<SignKey> skeys = new ArrayList<SignKey>();
+        List<EncryptKey> ekeys = new ArrayList<EncryptKey>();
         for (int i = 1; i <= 3; i++) {
-            keys.add(KeyData.create(i));
+            KeyData key = KeyData.create(i);
+            keys.add(key);
+            skeys.add(key.getSignKey());
+            ekeys.add(key.getEncryptKey());
         }
-        RandomMessageBuilder randomBuilder = new RandomMessageBuilder(keys);
+        CryptoFactoryImpl factory = new CryptoFactoryImpl(keys);
 
         Random rnd = new Random(0);
-        for (int i = 0; i < 1000; i++) {
-            System.out.println(i + 1);
-            RandomMessage rm = randomBuilder.create(rnd);
-            randomBuilder.check(rm);
-            RandomMessage cosigned = randomBuilder.cosign(rm, rnd);
-            randomBuilder.check(cosigned);
-        }
+        RandomMessageBuilder.runTests(skeys, ekeys, factory, rnd, 1000);
     }
 }

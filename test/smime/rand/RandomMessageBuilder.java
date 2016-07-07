@@ -1,8 +1,6 @@
-package smime.test;
+package smime.rand;
 
 import smime.*;
-import smime.impl.CryptoFactoryImpl;
-import smime.impl.KeyData;
 
 import javax.mail.MessagingException;
 import javax.mail.Part;
@@ -19,18 +17,20 @@ public final class RandomMessageBuilder {
 
     public static final InputStreamSource SOURCE = new MemStreamSource(FILE_NAME, DATA.getBytes());
 
-    private final CryptoFactoryImpl factory;
-    private final List<KeyData> keys;
+    private final CryptoFactory factory;
+    private final List<SignKey> skeys;
+    private final List<EncryptKey> ekeys;
     private final PartBuilder builder;
     private final Session session = SMimeReceive.createFakeSession();
 
-    RandomMessageBuilder(List<KeyData> keys) {
-        this.keys = keys;
-        this.factory = new CryptoFactoryImpl(keys);
+    public RandomMessageBuilder(List<SignKey> skeys, List<EncryptKey> ekeys, CryptoFactory factory) {
+        this.skeys = skeys;
+        this.ekeys = ekeys;
+        this.factory = factory;
         this.builder = new PartBuilder(factory);
     }
 
-    RandomMessage create(Random rnd) throws MessagingException, IOException, CryptoException {
+    public RandomMessage create(Random rnd) throws MessagingException, IOException, CryptoException {
         StringBuilder buf = new StringBuilder();
         MimeMessage message;
         boolean isNew = rnd.nextBoolean();
@@ -56,9 +56,9 @@ public final class RandomMessageBuilder {
                     parts[nparts - 1] = current;
                     current = PartBuilder.createMulti(parts);
                 } else if (envType <= 5) {
-                    int k = rnd.nextInt(keys.size());
+                    int k = rnd.nextInt(skeys.size());
                     buf.append(" Signed " + k);
-                    SignKey signKey = keys.get(k).getSignKey();
+                    SignKey signKey = skeys.get(k);
                     boolean detach = rnd.nextBoolean();
                     buf.append(" " + (detach ? "Detach" : "No detach"));
                     if (detach) {
@@ -69,9 +69,9 @@ public final class RandomMessageBuilder {
                     }
                     signed = true;
                 } else {
-                    int k = rnd.nextInt(keys.size());
+                    int k = rnd.nextInt(ekeys.size());
                     buf.append(" Encrypted " + k);
-                    EncryptKey encryptKey = keys.get(k).getEncryptKey();
+                    EncryptKey encryptKey = ekeys.get(k);
                     current = builder.encrypt(current, encryptKey);
                 }
             }
@@ -84,18 +84,18 @@ public final class RandomMessageBuilder {
             int sign = rnd.nextInt(3);
             SignKey[] signCerts = new SignKey[sign];
             for (int j = 0; j < sign; j++) {
-                int k = rnd.nextInt(keys.size());
+                int k = rnd.nextInt(skeys.size());
                 buf.append(" Signed " + k);
-                signCerts[j] = keys.get(k).getSignKey();
+                signCerts[j] = skeys.get(k);
                 signed = true;
             }
             boolean detach = rnd.nextBoolean();
             buf.append(" " + (detach ? "Detach" : "No detach"));
             EncryptKey encryptKey;
             if (rnd.nextBoolean()) {
-                int k = rnd.nextInt(keys.size());
+                int k = rnd.nextInt(ekeys.size());
                 buf.append(" Encrypted " + k);
-                encryptKey = keys.get(k).getEncryptKey();
+                encryptKey = ekeys.get(k);
             } else {
                 encryptKey = null;
             }
@@ -107,7 +107,7 @@ public final class RandomMessageBuilder {
         return new RandomMessage(message, compatible, buf.toString(), signed);
     }
 
-    void check(RandomMessage rm) throws Exception {
+    public void check(RandomMessage rm) throws Exception {
         try {
             checkNew(factory, rm.message);
             if (rm.oldCompatible) {
@@ -121,9 +121,9 @@ public final class RandomMessageBuilder {
         }
     }
 
-    RandomMessage cosign(RandomMessage rm, Random rnd) throws MessagingException, IOException, CryptoException {
-        int sk = rnd.nextInt(keys.size());
-        SignKey signKey = keys.get(sk).getSignKey();
+    public RandomMessage cosign(RandomMessage rm, Random rnd) throws MessagingException, IOException, CryptoException {
+        int sk = rnd.nextInt(skeys.size());
+        SignKey signKey = skeys.get(sk);
         if (rm.oldCompatible && rm.signed && rnd.nextBoolean()) {
             MimeMessage cosigned = SMimeSend.cosignMessage(factory, session, rm.message, new SignKey[] {signKey}, null);
             return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Old cosigned " + sk, true);
@@ -136,8 +136,8 @@ public final class RandomMessageBuilder {
                 add += " Detached";
             }
             if (rnd.nextBoolean()) {
-                int ek = rnd.nextInt(keys.size());
-                EncryptKey encryptKey = keys.get(ek).getEncryptKey();
+                int ek = rnd.nextInt(ekeys.size());
+                EncryptKey encryptKey = ekeys.get(ek);
                 cosigned = cosigned.encrypt(builder, encryptKey);
                 add += " Encrypted " + ek;
             }
@@ -147,12 +147,12 @@ public final class RandomMessageBuilder {
         }
     }
 
-    public static void check(CryptoFactoryImpl factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
+    public static void check(CryptoFactory factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
         checkNew(factory, message);
         checkOld(factory, message);
     }
 
-    private static void checkNew(CryptoFactoryImpl factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
+    private static void checkNew(CryptoFactory factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
         final Part[] foundPart = new Part[1];
         PartWalker partWalker = new PartWalker(factory, new PartCallback() {
             public void leafPart(Part part, List<SignInfo> signed) throws MessagingException {
@@ -170,7 +170,7 @@ public final class RandomMessageBuilder {
         check(foundPart[0]);
     }
 
-    private static void checkOld(CryptoFactoryImpl factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
+    private static void checkOld(CryptoFactory factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
         SignedPart part = SMimeReceive.read(factory, message);
         check(part.dataPart);
     }
@@ -187,6 +187,18 @@ public final class RandomMessageBuilder {
         }
         if (!DATA.equals(content)) {
             throw new IllegalStateException(content);
+        }
+    }
+
+    public static void runTests(List<SignKey> skeys, List<EncryptKey> ekeys, CryptoFactory factory, Random rnd, int n) throws Exception {
+        RandomMessageBuilder randomBuilder = new RandomMessageBuilder(skeys, ekeys, factory);
+
+        for (int i = 0; i < n; i++) {
+            System.out.println(i + 1);
+            RandomMessage rm = randomBuilder.create(rnd);
+            randomBuilder.check(rm);
+            RandomMessage cosigned = randomBuilder.cosign(rm, rnd);
+            randomBuilder.check(cosigned);
         }
     }
 }

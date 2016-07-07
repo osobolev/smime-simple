@@ -14,6 +14,7 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import smime.CryptoException;
 import smime.impl.CryptoFactoryImpl;
 import smime.impl.KeyData;
+import smime.rand.RandomMessageBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;

@@ -5,6 +5,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import smime.*;
 import smime.impl.CryptoFactoryImpl;
 import smime.impl.KeyData;
+import smime.rand.RandomMessageBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.Part;
