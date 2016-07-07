@@ -18,5 +18,15 @@
         <processorPath useClasspath="true" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="smime_main" target="1.6" />
+      <module name="smime_test" target="1.6" />
+      <module name="testing-bc_main" target="1.6" />
+      <module name="testing-bc_test" target="1.6" />
+      <module name="testing-rand_main" target="1.6" />
+      <module name="testing-rand_test" target="1.6" />
+      <module name="testing-test_main" target="1.6" />
+      <module name="testing-test_test" target="1.6" />
+    </bytecodeTargetLevel>
   </component>
 </project>

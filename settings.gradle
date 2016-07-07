@@ -1,0 +1,8 @@
+include 'smime', 'testing/bc', 'testing/rand', 'testing/test'
+
+rootProject.name = 'smime-simple'
+
+project(':smime').name = 'smime'
+project(':testing/bc').name = 'testing-bc'
+project(':testing/rand').name = 'testing-rand'
+project(':testing/test').name = 'testing-test'

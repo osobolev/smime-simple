@@ -16,10 +16,10 @@ import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.io.Streams;
 import smime.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -67,17 +67,11 @@ final class CryptoImpl implements Crypto {
         }
     }
 
-    private static String toString(InputStream in) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        SignedPart.copyStream(in, out);
-        return out.toString();
-    }
-
     private static String extractData(CMSSignedDataParser sp) throws IOException {
         InputStream is = sp.getSignedContent().getContentStream();
-        String str = toString(is);
+        byte[] bytes = Streams.readAll(is);
         is.close();
-        return str;
+        return new String(bytes);
     }
 
     public String getSigners(InputStream data, List<SignInfo> signers) throws CryptoException, IOException {

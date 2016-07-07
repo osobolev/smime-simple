@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id=":smime:test" external.linked.project.path="$MODULE_DIR$/../../../smime" external.root.project.path="$MODULE_DIR$/../../.." external.system.id="GRADLE" external.system.module.group="com.github.osobolev.smime-simple" external.system.module.type="sourceSet" external.system.module.version="1.0" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_6" inherit-compiler-output="false">
+    <output-test url="file://$MODULE_DIR$/../../../smime/build/classes/test" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../../smime/src/test">
+      <sourceFolder url="file://$MODULE_DIR$/../../../smime/src/test/resources" type="java-test-resource" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../../smime/test">
+      <sourceFolder url="file://$MODULE_DIR$/../../../smime/test" isTestSource="true" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="smime_main" />
+    <orderEntry type="library" name="Gradle: javax.mail:mail:1.4.7" level="project" />
+    <orderEntry type="library" name="Gradle: javax.activation:activation:1.1" level="project" />
+  </component>
+  <component name="TestModuleProperties" production-module="smime_main" />
+</module>

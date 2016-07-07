@@ -1,26 +1,50 @@
-apply plugin: 'java'
-apply plugin: 'maven'
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven'
 
-group = 'com.github.osobolev'
-version = '1.0'
+    group = 'com.github.osobolev.smime-simple'
+    version = '1.0'
 
-sourceCompatibility = '1.6'
-targetCompatibility = '1.6'
-                         
-compileJava.options.encoding = 'windows-1251'
+    sourceCompatibility = '1.6'
+    targetCompatibility = '1.6'
+                             
+    compileJava.options.encoding = 'windows-1251'
 
-repositories {
-    mavenCentral()
+    repositories {
+        mavenCentral()
+    }
+
+    jar.manifest.attributes('Implementation-Version': version)
+
+    sourceSets.main.java.srcDirs = ['src']
+    sourceSets.test.java.srcDirs = ['test']
 }
 
-jar.manifest.attributes('Implementation-Version': version)
+project(':smime') {
+    dependencies {
+        compile 'javax.mail:mail:1.4.7'
+    }
+}
 
-sourceSets.main.java.srcDirs = ['src']
-sourceSets.test.java.srcDirs = ['test']
+project(':testing-bc') {
+    dependencies {
+        compile project(':smime')
+        compile 'org.bouncycastle:bcprov-jdk15on:1.54'
+        compile 'org.bouncycastle:bcpkix-jdk15on:1.54'
+    }
+}
 
-dependencies {
-    compile 'javax.mail:mail:1.4.7'
-    testCompile 'org.bouncycastle:bcprov-jdk15on:1.54'
-    testCompile 'org.bouncycastle:bcpkix-jdk15on:1.54'
-    testCompile 'org.bouncycastle:bcmail-jdk15on:1.54'
+project(':testing-rand') {
+    dependencies {
+        compile project(':smime')
+    }
+}
+
+project(':testing-test') {
+    dependencies {
+        testCompile 'org.bouncycastle:bcmail-jdk15on:1.54'
+        testCompile project(':smime')
+        testCompile project(':testing-bc')
+        testCompile project(':testing-rand')
+    }
 }
