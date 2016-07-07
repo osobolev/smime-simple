@@ -30,7 +30,22 @@ public final class RandomMessageBuilder {
         this.builder = new PartBuilder(factory);
     }
 
+    private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
+
+    private static String randomString(Random rnd) {
+        int len = rnd.nextInt(20) + 1;
+        StringBuilder buf = new StringBuilder(len);
+        for (int i = 0; i < len; i++) {
+            int c = rnd.nextInt(ALPHABET.length());
+            buf.append(ALPHABET.charAt(c));
+        }
+        return buf.toString();
+    }
+
     public RandomMessage create(Random rnd) throws MessagingException, IOException, CryptoException {
+        String fileName = randomString(rnd) + ".txt";
+        String content = randomString(rnd);
+        InputStreamSource src = new MemStreamSource(fileName, content.getBytes());
         StringBuilder buf = new StringBuilder();
         MimeMessage message;
         boolean isNew = rnd.nextBoolean();
@@ -38,7 +53,7 @@ public final class RandomMessageBuilder {
         boolean signed = false;
         if (isNew) {
             buf.append("New");
-            MyBodyPart filePart = PartBuilder.createFile(SOURCE, "text/plain", "Windows-1251", "Comment");
+            MyBodyPart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
             int envelopes = rnd.nextInt(5);
             MyBodyPart current = filePart;
             boolean wasDetached = false;
@@ -100,18 +115,18 @@ public final class RandomMessageBuilder {
                 encryptKey = null;
             }
             message = SMimeSend.createMessage(
-                factory, session, "Windows-1251", SOURCE, "Comment",
+                factory, session, "Windows-1251", src, "Comment",
                 signCerts, encryptKey, detach
             );
         }
-        return new RandomMessage(message, compatible, buf.toString(), signed);
+        return new RandomMessage(fileName, content, message, compatible, buf.toString(), signed);
     }
 
     public void check(RandomMessage rm) throws Exception {
         try {
-            checkNew(factory, rm.message);
+            checkNew(factory, rm.message, rm.fileName, rm.content);
             if (rm.oldCompatible) {
-                checkOld(factory, rm.message);
+                checkOld(factory, rm.message, rm.fileName, rm.content);
             }
         } catch (Exception ex) {
             System.out.println(rm.description);
@@ -126,7 +141,9 @@ public final class RandomMessageBuilder {
         SignKey signKey = skeys.get(sk);
         if (rm.oldCompatible && rm.signed && rnd.nextBoolean()) {
             MimeMessage cosigned = SMimeSend.cosignMessage(factory, session, rm.message, new SignKey[] {signKey}, null);
-            return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Old cosigned " + sk, true);
+            return new RandomMessage(
+                rm.fileName, rm.content, cosigned, rm.oldCompatible, rm.description + " Old cosigned " + sk, true
+            );
         } else {
             CoSignedMessage cosigned = new CoSignWalker(factory, signKey).walk(rm.message);
             String add = "";
@@ -142,17 +159,19 @@ public final class RandomMessageBuilder {
                 add += " Encrypted " + ek;
             }
             return new RandomMessage(
-                cosigned.getMessage(session), rm.oldCompatible, rm.description + " Cosigned " + sk + add, true
+                rm.fileName, rm.content, cosigned.getMessage(session), rm.oldCompatible,
+                rm.description + " Cosigned " + sk + add, true
             );
         }
     }
 
     public static void check(CryptoFactory factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
-        checkNew(factory, message);
-        checkOld(factory, message);
+        checkNew(factory, message, FILE_NAME, DATA);
+        checkOld(factory, message, FILE_NAME, DATA);
     }
 
-    private static void checkNew(CryptoFactory factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
+    private static void checkNew(CryptoFactory factory, MimeMessage message,
+                                 String requiredFileName, String requiredContent) throws CryptoException, IOException, MessagingException {
         final Part[] foundPart = new Part[1];
         PartWalker partWalker = new PartWalker(factory, new PartCallback() {
             public void leafPart(Part part, List<SignInfo> signed) throws MessagingException {
@@ -167,25 +186,26 @@ public final class RandomMessageBuilder {
             }
         });
         partWalker.walk(message);
-        check(foundPart[0]);
+        check(foundPart[0], requiredFileName, requiredContent);
     }
 
-    private static void checkOld(CryptoFactory factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
+    private static void checkOld(CryptoFactory factory, MimeMessage message,
+                                 String requiredFileName, String requiredContent) throws CryptoException, IOException, MessagingException {
         SignedPart part = SMimeReceive.read(factory, message);
-        check(part.dataPart);
+        check(part.dataPart, requiredFileName, requiredContent);
     }
 
-    private static void check(Part part) throws IOException, MessagingException {
+    private static void check(Part part, String requiredFileName, String requiredContent) throws IOException, MessagingException {
         String fileName = null;
         String content = null;
         if (part != null) {
             fileName = part.getFileName();
             content = (String) part.getContent();
         }
-        if (!FILE_NAME.equals(fileName)) {
+        if (!requiredFileName.equals(fileName)) {
             throw new IllegalStateException(fileName);
         }
-        if (!DATA.equals(content)) {
+        if (!requiredContent.equals(content)) {
             throw new IllegalStateException(content);
         }
     }
