@@ -1,4 +1,4 @@
-package ru.fe.crypto.mail.impl;
+package ru.fe.crypto.mail.test;
 
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
@@ -12,7 +12,8 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import ru.fe.crypto.mail.CryptoException;
-import ru.fe.crypto.mail.test.RandomMessageBuilder;
+import ru.fe.crypto.mail.impl.CryptoFactoryImpl;
+import ru.fe.crypto.mail.impl.KeyData;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;

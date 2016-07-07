@@ -22,8 +22,8 @@ public final class KeyData {
     static final String ALGORITHM = "SHA1withRSA";
     static final String BC = "BC";
 
-    final X509Certificate certificate;
-    final PrivateKey privateKey;
+    public final X509Certificate certificate;
+    public final PrivateKey privateKey;
 
     public KeyData(X509Certificate certificate, PrivateKey privateKey) {
         this.certificate = certificate;

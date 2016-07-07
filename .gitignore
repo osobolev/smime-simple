@@ -1,0 +1,6 @@
+*.class
+uiDesigner.xml
+out/
+build/
+.gradle/
+/lib/

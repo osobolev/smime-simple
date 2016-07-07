@@ -1,0 +1,27 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'com.github.osobolev.smime-simple'
+version = '1.0'
+
+sourceCompatibility = '1.6'
+targetCompatibility = '1.6'
+                         
+compileJava.options.encoding = 'windows-1251'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+jar.manifest.attributes('Implementation-Version': version)
+
+sourceSets.main.java.srcDirs = ['src']
+sourceSets.test.java.srcDirs = ['test']
+
+dependencies {
+    compile 'javax.mail:mail:1.4.7'
+    testCompile 'org.bouncycastle:bcprov-jdk15on:1.54'
+    testCompile 'org.bouncycastle:bcpkix-jdk15on:1.54'
+    testCompile 'org.bouncycastle:bcmail-jdk15on:1.54'
+}
