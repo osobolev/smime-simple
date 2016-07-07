@@ -117,7 +117,7 @@ final class CryptoImpl implements Crypto {
             gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digestCalculatorProvider).build(contentSigner, impl.certificate));
             gen.addCertificates(store);
             CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), !detached);
-            return Base64.base64(cms.getEncoded());
+            return base64(cms.getEncoded());
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (CertificateEncodingException ex) {
@@ -134,7 +134,7 @@ final class CryptoImpl implements Crypto {
             gen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(impl.certificate).setProvider(BC));
             OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build();
             CMSEnvelopedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), encryptor);
-            return Base64.base64(cms.getEncoded());
+            return base64(cms.getEncoded());
         } catch (CertificateEncodingException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (CMSException ex) {
@@ -182,7 +182,7 @@ final class CryptoImpl implements Crypto {
             gen.addCertificates(store);
             gen.addSigners(sp.getSignerInfos());
             CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), !detached);
-            return Base64.base64(cms.getEncoded());
+            return base64(cms.getEncoded());
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         } catch (CertificateEncodingException ex) {
@@ -190,6 +190,10 @@ final class CryptoImpl implements Crypto {
         } catch (OperatorCreationException ex) {
             throw new CryptoExceptionImpl(ex);
         }
+    }
+
+    private static String base64(byte[] data) throws IOException {
+        return MimeUtil.base64(new ByteArrayInputStream(data));
     }
 
     private static InputStream raw(String str) {

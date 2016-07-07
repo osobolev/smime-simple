@@ -126,7 +126,7 @@ final class MailWriter {
                     text = writeMessage(current, currentData);
                 } else {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    PartBuilder.write(current, bos);
+                    MimeUtil.writePart(bos, current);
                     text = bos.toString();
                 }
                 if (envelope.type == EnvelopeDesc.ENCRYPT) {
@@ -164,7 +164,7 @@ final class MailWriter {
         if (src != null) {
             MimeBodyPart plainPart = new MimeBodyPart();
             fillPlain(plainPart, src.getName(), charset, comment);
-            String plainData = Base64.base64(src.open());
+            String plainData = MimeUtil.base64(src.open());
             enveloper = new Enveloper(factory, plainPart, plainData);
         } else {
             enveloper = new Enveloper(factory, originalMsg, null);
@@ -219,7 +219,7 @@ final class MailWriter {
             plainPart = new MimeBodyPart();
             fillPlain(plainPart, src.getName(), charset, comment);
             mp.addBodyPart(plainPart);
-            data = Base64.base64(src.open());
+            data = MimeUtil.base64(src.open());
 
             String text = writeMessage(plainPart, data);
 
@@ -258,7 +258,7 @@ final class MailWriter {
         } else if (rawData != null) {
             los.writeln(rawData);
         } else {
-            los.writeln(Base64.base64(rawSignature.getInputStream()));
+            los.writeln(MimeUtil.base64(rawSignature.getInputStream()));
         }
         los.writeln(boundary);
         writeMessage(los, signPart, signature);
@@ -276,15 +276,7 @@ final class MailWriter {
         return bos.toString();
     }
 
-    private static LineOutputStream toLOS(OutputStream os) {
-        return os instanceof LineOutputStream ? (LineOutputStream) os : new LineOutputStream(os);
-    }
-
     private static void writeMessage(OutputStream os, MimePart part, String data) throws MessagingException, IOException {
-        LineOutputStream los = toLOS(os);
-        MimeUtil.writeHeaders(part, los);
-        los.write(data.getBytes());
-        los.writeln();
-        los.flush();
+        MimeUtil.composePart(os, part, data);
     }
 }

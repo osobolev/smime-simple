@@ -56,7 +56,7 @@ public final class PartBuilder extends PartBuilderInternal {
     }
 
     public static MimeMessage toMessage(Session session, MyBodyPart myPart) throws MessagingException, IOException {
-        MimeMessage result = new MimeMessage(session, PartWalker.serialize(myPart.getPart()));
+        MimeMessage result = new MimeMessage(session, MimeUtil.serialize(myPart.getPart()));
         result.saveChanges();
         return result;
     }

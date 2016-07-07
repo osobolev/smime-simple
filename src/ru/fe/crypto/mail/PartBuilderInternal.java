@@ -1,16 +1,11 @@
 package ru.fe.crypto.mail;
 
-import com.sun.mail.util.CRLFOutputStream;
-import com.sun.mail.util.LineOutputStream;
-
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.internet.*;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 class PartBuilderInternal {
 
@@ -26,9 +21,7 @@ class PartBuilderInternal {
 
     private static MyBodyPart createPart(MimePart headers, String base64) throws MessagingException, IOException {
         BiByteArrayStream bis = new BiByteArrayStream();
-        LineOutputStream los = new LineOutputStream(bis.output());
-        MimeUtil.writeHeaders(headers, los);
-        los.writeln(base64); // todo: remove extra eoln???
+        MimeUtil.composePart(bis.output(), headers, base64);
         return MyBodyPart.simple(bis.input());
     }
 
@@ -45,28 +38,18 @@ class PartBuilderInternal {
         return createCryptoPart("application/pkcs7-mime; smime-type=\"" + mimeSubType + "\"", "smime.p7m", base64);
     }
 
-    public static void write(Part part, OutputStream os) throws IOException, MessagingException {
-        part.writeTo(new CRLFOutputStream(os));
-    }
-
-    static String partToString(Part part) throws IOException, MessagingException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        write(part, bos);
-        return bos.toString();
-    }
-
     private Crypto getCrypto() {
         return factory.getCrypto();
     }
 
     final MyBodyPart encrypt(MimeBodyPart part, EncryptKey key) throws CryptoException, IOException, MessagingException {
-        String data = partToString(part);
+        String data = MimeUtil.partToString(part);
         String encryptedData = getCrypto().encryptData(data, key);
         return createCryptoPart("enveloped-data", encryptedData);
     }
 
     final MyBodyPart sign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
-        String data = partToString(part);
+        String data = MimeUtil.partToString(part);
         String signedData = getCrypto().signData(data, key, false);
         return createCryptoPart("signed-data", signedData);
     }
@@ -91,7 +74,7 @@ class PartBuilderInternal {
     }
 
     final MyBodyPart signDetached(BodyPart part, String preamble, SignKey key) throws MessagingException, CryptoException, IOException {
-        String data = partToString(part);
+        String data = MimeUtil.partToString(part);
         String signature = getCrypto().signData(data, key, true);
         MimeMultipart mp = createSignedMultipart(part, signature, preamble);
         return MyBodyPart.complex(mp);
@@ -110,7 +93,7 @@ class PartBuilderInternal {
             signaturePart = part2;
             dataPart = part1;
         }
-        String data = partToString(dataPart);
+        String data = MimeUtil.partToString(dataPart);
         InputStream is = signaturePart.getInputStream();
         String cosigned;
         try {
@@ -130,14 +113,13 @@ class PartBuilderInternal {
 
     public static MyBodyPart createFile(InputStreamSource src, String contentType, String charset, String comment) throws MessagingException, IOException {
         MimeBodyPart headers = new MimeBodyPart();
-        String fileName = src.getName();
         headers.setDescription(comment);
         headers.setHeader(CONTENT_TYPE, contentType);
         headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
         ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
-        disposition.setParameter("filename", MimeUtility.encodeText(fileName, charset, "Q"));
+        disposition.setParameter("filename", MimeUtility.encodeText(src.getName(), charset, "Q"));
         headers.setDisposition(disposition.toString());
-        String base64 = Base64.base64(src.open());
+        String base64 = MimeUtil.base64(src.open());
         return createPart(headers, base64);
     }
 

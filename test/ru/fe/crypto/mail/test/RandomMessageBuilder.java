@@ -122,21 +122,27 @@ public final class RandomMessageBuilder {
     }
 
     RandomMessage cosign(RandomMessage rm, Random rnd) throws MessagingException, IOException, CryptoException {
-        int k = rnd.nextInt(keys.size());
-        SignKey signKey = keys.get(k).getSignKey();
+        int sk = rnd.nextInt(keys.size());
+        SignKey signKey = keys.get(sk).getSignKey();
         if (rm.oldCompatible && rm.signed && rnd.nextBoolean()) {
             MimeMessage cosigned = SMimeSend.cosignMessage(factory, session, rm.message, new SignKey[] {signKey}, null);
-            return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Old cosigned " + k, true);
+            return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Old cosigned " + sk, true);
         } else {
             CoSignedMessage cosigned = new CoSignWalker(factory, signKey).walk(rm.message);
-            String signedDetached = "";
+            String add = "";
             if (!cosigned.isSigned()) {
                 boolean detached = rnd.nextBoolean();
                 cosigned = cosigned.sign(builder, signKey, detached);
-                signedDetached = " Detached";
+                add += " Detached";
+            }
+            if (rnd.nextBoolean()) {
+                int ek = rnd.nextInt(keys.size());
+                EncryptKey encryptKey = keys.get(ek).getEncryptKey();
+                cosigned = cosigned.encrypt(builder, encryptKey);
+                add += " Encrypted " + ek;
             }
             return new RandomMessage(
-                cosigned.getMessage(session), rm.oldCompatible, rm.description + " Cosigned " + k + signedDetached, true
+                cosigned.getMessage(session), rm.oldCompatible, rm.description + " Cosigned " + sk + add, true
             );
         }
     }

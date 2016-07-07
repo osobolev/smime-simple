@@ -113,7 +113,7 @@ final class MailReader {
             }
 
             BiByteArrayStream bis = new BiByteArrayStream();
-            PartBuilder.write(dataPart, bis.output());
+            MimeUtil.writePart(bis.output(), dataPart);
             getInstance().getSignersDetached(bis.input(), signaturePart.getInputStream(), certificates);
 
             Part attachmentPart = searchAttachment(dataPart);

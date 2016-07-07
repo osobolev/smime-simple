@@ -48,7 +48,7 @@ public final class MyBodyPart {
         if (part instanceof CommitablePart) {
             return new MyBodyPart((CommitablePart) part);
         } else {
-            return simple(PartWalker.serialize(part));
+            return simple(MimeUtil.serialize(part));
         }
     }
 
