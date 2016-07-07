@@ -33,7 +33,7 @@ public final class TestCoSignNew {
 
         PartBuilder builder = new PartBuilder(factory);
         MyBodyPart file = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
-        MyBodyPart signed = builder.sign(file.getPart(), key1.getSignKey(), true);
+        MyBodyPart signed = builder.sign(file, key1.getSignKey(), true);
         MimeMessage message = PartBuilder.toMessage(session, signed);
 
         CoSignWalker walker = new CoSignWalker(factory, key2.getSignKey());

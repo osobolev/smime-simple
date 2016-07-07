@@ -49,7 +49,7 @@ public final class RandomMessageBuilder {
                     buf.append(" Wrapped");
                     wasWrapped = true;
                     MyBodyPart text = PartBuilder.createText("Hello!", "Windows-1251");
-                    current = PartBuilder.createMulti(text.getPart(), current.getPart());
+                    current = PartBuilder.createMulti(text, current);
                 } else if (envType <= 5) {
                     int k = rnd.nextInt(keys.size());
                     buf.append(" Signed " + k);
@@ -57,17 +57,17 @@ public final class RandomMessageBuilder {
                     boolean detach = rnd.nextBoolean();
                     buf.append(" " + (detach ? "Detach" : "No detach"));
                     if (detach) {
-                        current = builder.signDetached(current.getPart(), signKey);
+                        current = builder.signDetached(current, signKey);
                         wasDetached = true;
                     } else {
-                        current = builder.sign(current.getPart(), signKey);
+                        current = builder.sign(current, signKey);
                     }
                     signed = true;
                 } else {
                     int k = rnd.nextInt(keys.size());
                     buf.append(" Encrypted " + k);
                     EncryptKey encryptKey = keys.get(k).getEncryptKey();
-                    current = builder.encrypt(current.getPart(), encryptKey);
+                    current = builder.encrypt(current, encryptKey);
                 }
             }
             if (wasDetached || wasWrapped) {

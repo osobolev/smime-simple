@@ -52,7 +52,8 @@ public final class MyBodyPart {
         }
     }
 
-    public MimeBodyPart getPart() throws MessagingException {
+    // todo: hide to make MyBodyParts immutable
+    MimeBodyPart getPart() throws MessagingException {
         part.commit();
         return part;
     }

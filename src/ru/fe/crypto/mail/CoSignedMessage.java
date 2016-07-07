@@ -25,14 +25,12 @@ public final class CoSignedMessage {
     }
 
     public CoSignedMessage sign(PartBuilder builder, SignKey key, boolean detached) throws IOException, MessagingException, CryptoException {
-        MimeBodyPart mbp = part.getPart();
-        MyBodyPart signed = builder.sign(mbp, key, detached);
+        MyBodyPart signed = builder.sign(part, key, detached);
         return new CoSignedMessage(signed, true);
     }
 
     public CoSignedMessage encrypt(PartBuilder builder, EncryptKey key) throws IOException, MessagingException, CryptoException {
-        MimeBodyPart mbp = part.getPart();
-        MyBodyPart encrypted = builder.encrypt(mbp, key);
+        MyBodyPart encrypted = builder.encrypt(part, key);
         return new CoSignedMessage(encrypted, signed);
     }
 }
