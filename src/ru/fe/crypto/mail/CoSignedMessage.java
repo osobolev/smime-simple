@@ -2,7 +2,6 @@ package ru.fe.crypto.mail;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 
