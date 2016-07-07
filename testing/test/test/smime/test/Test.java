@@ -3,8 +3,8 @@ package smime.test;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import smime.EncryptKey;
 import smime.SignKey;
-import smime.impl.CryptoFactoryImpl;
-import smime.impl.KeyData;
+import smime.bc.CryptoFactoryImpl;
+import smime.bc.KeyData;
 import smime.rand.RandomMessageBuilder;
 
 import java.security.Security;

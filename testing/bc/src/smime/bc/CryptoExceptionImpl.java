@@ -1,4 +1,4 @@
-package smime.impl;
+package smime.bc;
 
 import smime.CryptoException;
 

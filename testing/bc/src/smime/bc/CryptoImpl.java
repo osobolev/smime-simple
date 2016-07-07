@@ -1,4 +1,4 @@
-package smime.impl;
+package smime.bc;
 
 import com.sun.mail.util.BASE64DecoderStream;
 import org.bouncycastle.cert.X509CertificateHolder;
