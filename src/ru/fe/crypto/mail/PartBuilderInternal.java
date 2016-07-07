@@ -29,7 +29,6 @@ class PartBuilderInternal {
         LineOutputStream los = new LineOutputStream(bis.output());
         MimeUtil.writeHeaders(headers, los);
         los.writeln(base64); // todo: remove extra eoln???
-        los.flush();
         return MyBodyPart.simple(bis.input());
     }
 

@@ -1,7 +1,6 @@
 package ru.fe.crypto.mail;
 
 import javax.mail.MessagingException;
-import javax.mail.Multipart;
 import javax.mail.internet.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -51,9 +50,16 @@ public final class CoSignWalker {
                 return walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())), signed);
             }
         } else if (part.isMimeType("multipart/*")) {
-            Multipart mp = (Multipart) part.getContent();
-            ContentType contentType = new ContentType(mp.getContentType());
-            MimeMultipart newMp = new MimeMultipart(contentType.getSubType());
+            MimeMultipart mp = (MimeMultipart) part.getContent();
+            String contentType = mp.getContentType();
+            int p = contentType.indexOf('/');
+            MimeMultipart newMp;
+            if (p >= 0) {
+                newMp = new MimeMultipart(contentType.substring(p + 1));
+            } else {
+                newMp = new MimeMultipart();
+            }
+            newMp.setPreamble(mp.getPreamble());
             int count = mp.getCount();
             for (int i = 0; i < count; i++) {
                 MimeBodyPart child = (MimeBodyPart) mp.getBodyPart(i);

@@ -17,7 +17,6 @@ final class MimeUtil {
             los.writeln(line);
         }
         los.writeln();
-        los.flush();
     }
 
     static void close(Closeable c) {

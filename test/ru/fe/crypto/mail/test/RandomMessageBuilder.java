@@ -46,10 +46,15 @@ public final class RandomMessageBuilder {
             for (int j = 0; j < envelopes; j++) {
                 int envType = rnd.nextInt(11); // 0..10: 1..5 to sign, 5..10 to encrypt, 0 to add text
                 if (envType == 0) {
-                    buf.append(" Wrapped");
+                    int nparts = rnd.nextInt(2) + 2;
+                    buf.append(" Wrapped " + nparts);
                     wasWrapped = true;
-                    MyBodyPart text = PartBuilder.createText("Hello!", "Windows-1251");
-                    current = PartBuilder.createMulti(text, current);
+                    MyBodyPart[] parts = new MyBodyPart[nparts];
+                    for (int k = 0; k < nparts - 1; k++) {
+                        parts[k] = PartBuilder.createText("Hello " + (k + 1), "Windows-1251");
+                    }
+                    parts[nparts - 1] = current;
+                    current = PartBuilder.createMulti(parts);
                 } else if (envType <= 5) {
                     int k = rnd.nextInt(keys.size());
                     buf.append(" Signed " + k);
