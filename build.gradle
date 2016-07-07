@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 
-group = 'com.github.osobolev.smime-simple'
+group = 'com.github.osobolev'
 version = '1.0'
 
 sourceCompatibility = '1.6'
@@ -10,7 +10,6 @@ targetCompatibility = '1.6'
 compileJava.options.encoding = 'windows-1251'
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
