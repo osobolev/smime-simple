@@ -46,10 +46,6 @@ class PartBuilderInternal {
         return createCryptoPart("application/pkcs7-mime; smime-type=\"" + mimeSubType + "\"", "smime.p7m", base64);
     }
 
-    private Crypto getCrypto() {
-        return factory.getCrypto();
-    }
-
     public static void write(Part part, OutputStream os) throws IOException, MessagingException {
         part.writeTo(new CRLFOutputStream(os));
     }
@@ -60,19 +56,14 @@ class PartBuilderInternal {
         return bos.toString();
     }
 
+    private Crypto getCrypto() {
+        return factory.getCrypto();
+    }
+
     final MyBodyPart encrypt(MimeBodyPart part, EncryptKey key) throws CryptoException, IOException, MessagingException {
         String data = partToString(part);
         String encryptedData = getCrypto().encryptData(data, key);
         return createCryptoPart("enveloped-data", encryptedData);
-    }
-
-    // todo: remove???
-    final MyBodyPart sign(BodyPart part, SignKey key, boolean detached) throws MessagingException, IOException, CryptoException {
-        if (detached) {
-            return signDetached(part, key);
-        } else {
-            return sign(part, key);
-        }
     }
 
     final MyBodyPart sign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
@@ -90,11 +81,6 @@ class PartBuilderInternal {
             MimeUtil.close(is);
         }
         return createCryptoPart("signed-data", cosignedData);
-    }
-
-    // todo: remove???
-    final MyBodyPart signDetached(BodyPart part, SignKey key) throws MessagingException, CryptoException, IOException {
-        return signDetached(part, "This is an S/MIME multipart signed message", key);
     }
 
     private static MimeMultipart createSignedMultipart(BodyPart dataPart, String signature, String preamble) throws MessagingException, IOException {
