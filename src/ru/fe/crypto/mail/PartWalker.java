@@ -33,7 +33,7 @@ public final class PartWalker {
         return factory.getCrypto();
     }
 
-    private static InputStream canonicalize(Part part) throws MessagingException, IOException {
+    static InputStream serialize(Part part) throws MessagingException, IOException {
         BiByteArrayStream bis = new BiByteArrayStream();
         PartBuilder.write(part, bis.output());
         return bis.input();
@@ -56,7 +56,7 @@ public final class PartWalker {
             List<SignInfo> newSigned = new ArrayList<SignInfo>(signed);
             InputStream is = signaturePart.getInputStream();
             try {
-                InputStream data = canonicalize(dataPart);
+                InputStream data = serialize(dataPart);
                 getCrypto().getSignersDetached(data, is, newSigned);
             } finally {
                 MimeUtil.close(is);

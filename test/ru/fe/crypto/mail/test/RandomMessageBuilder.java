@@ -7,7 +7,6 @@ import ru.fe.crypto.mail.impl.KeyData;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.Session;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.List;
@@ -39,32 +38,39 @@ public final class RandomMessageBuilder {
         boolean signed = false;
         if (isNew) {
             buf.append("New");
-            MimeBodyPart filePart = PartBuilder.createFile(SOURCE, "text/plain", "Windows-1251", "Comment");
+            MyBodyPart filePart = PartBuilder.createFile(SOURCE, "text/plain", "Windows-1251", "Comment");
             int envelopes = rnd.nextInt(5);
-            MimeBodyPart current = filePart;
+            MyBodyPart current = filePart;
             boolean wasDetached = false;
+            boolean wasWrapped = false;
             for (int j = 0; j < envelopes; j++) {
-                if (rnd.nextBoolean()) {
+                int envType = rnd.nextInt(11); // 0..10: 1..5 to sign, 5..10 to encrypt, 0 to add text
+                if (envType == 0) {
+                    buf.append(" Wrapped");
+                    wasWrapped = true;
+                    MyBodyPart text = PartBuilder.createText("Hello!", "Windows-1251");
+                    current = PartBuilder.createMulti(text.getPart(), current.getPart());
+                } else if (envType <= 5) {
                     int k = rnd.nextInt(keys.size());
                     buf.append(" Signed " + k);
                     SignKey signKey = keys.get(k).getSignKey();
                     boolean detach = rnd.nextBoolean();
                     buf.append(" " + (detach ? "Detach" : "No detach"));
                     if (detach) {
-                        current = builder.signDetached(current, signKey);
+                        current = builder.signDetached(current.getPart(), signKey);
                         wasDetached = true;
                     } else {
-                        current = builder.sign(current, signKey);
+                        current = builder.sign(current.getPart(), signKey);
                     }
                     signed = true;
                 } else {
                     int k = rnd.nextInt(keys.size());
                     buf.append(" Encrypted " + k);
                     EncryptKey encryptKey = keys.get(k).getEncryptKey();
-                    current = builder.encrypt(current, encryptKey);
+                    current = builder.encrypt(current.getPart(), encryptKey);
                 }
             }
-            if (wasDetached) {
+            if (wasDetached || wasWrapped) {
                 compatible = envelopes <= 1;
             }
             message = PartBuilder.toMessage(session, current);
@@ -118,11 +124,15 @@ public final class RandomMessageBuilder {
             return new RandomMessage(cosigned, rm.oldCompatible, rm.description + " Old cosigned " + k, true);
         } else {
             CoSignedMessage cosigned = new CoSignWalker(factory, signKey).walk(rm.message);
+            String signedDetached = "";
             if (!cosigned.isSigned()) {
                 boolean detached = rnd.nextBoolean();
                 cosigned = cosigned.sign(builder, signKey, detached);
+                signedDetached = " Detached";
             }
-            return new RandomMessage(cosigned.getMessage(session), rm.oldCompatible, rm.description + " Cosigned " + k, true);
+            return new RandomMessage(
+                cosigned.getMessage(session), rm.oldCompatible, rm.description + " Cosigned " + k + signedDetached, true
+            );
         }
     }
 
@@ -134,11 +144,13 @@ public final class RandomMessageBuilder {
     private static void checkNew(CryptoFactoryImpl factory, MimeMessage message) throws CryptoException, IOException, MessagingException {
         final Part[] foundPart = new Part[1];
         PartWalker partWalker = new PartWalker(factory, new PartCallback() {
-            public void leafPart(Part part, List<SignInfo> signed) {
-                foundPart[0] = part;
+            public void leafPart(Part part, List<SignInfo> signed) throws MessagingException {
+                if (part.getFileName() != null) {
+                    foundPart[0] = part;
+                }
                 for (SignInfo signInfo : signed) {
                     if (!signInfo.verified) {
-                        throw new IllegalStateException("Not verified: " + signInfo.info);
+                        throw new IllegalStateException("Not verified: " + signInfo.info + " (" + signInfo.error + ")");
                     }
                 }
             }

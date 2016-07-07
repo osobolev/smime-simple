@@ -9,7 +9,6 @@ import ru.fe.crypto.mail.impl.KeyData;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.Session;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -33,8 +32,8 @@ public final class TestCoSignNew {
         Session session = SMimeReceive.createFakeSession();
 
         PartBuilder builder = new PartBuilder(factory);
-        MimeBodyPart file = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
-        MimeBodyPart signed = builder.sign(file, key1.getSignKey(), true);
+        MyBodyPart file = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
+        MyBodyPart signed = builder.sign(file.getPart(), key1.getSignKey(), true);
         MimeMessage message = PartBuilder.toMessage(session, signed);
 
         CoSignWalker walker = new CoSignWalker(factory, key2.getSignKey());

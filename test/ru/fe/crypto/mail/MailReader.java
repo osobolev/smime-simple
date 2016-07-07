@@ -1,7 +1,5 @@
 package ru.fe.crypto.mail;
 
-import com.sun.mail.util.LineOutputStream;
-
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
@@ -12,8 +10,6 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimePart;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -117,7 +113,7 @@ final class MailReader {
             }
 
             BiByteArrayStream bis = new BiByteArrayStream();
-            write(dataPart, bis.output());
+            PartBuilder.write(dataPart, bis.output());
             getInstance().getSignersDetached(bis.input(), signaturePart.getInputStream(), certificates);
 
             Part attachmentPart = searchAttachment(dataPart);
@@ -129,14 +125,6 @@ final class MailReader {
             } else {
                 return new SignedPart(msg, attachmentPart, certificates, null, null);
             }
-        }
-
-        private static void write(MimeBodyPart part, OutputStream os) throws MessagingException, IOException {
-            LineOutputStream los = new LineOutputStream(os);
-            MimeUtil.writeHeaders(part, los);
-            InputStream is = part.getRawInputStream();
-            MimeUtil.copyStreamEoln(is, os);
-            os.flush();
         }
     }
 

@@ -23,16 +23,16 @@ public final class PartBuilder {
         this.factory = factory;
     }
 
-    private static MimeBodyPart createPart(MimePart headers, String base64) throws MessagingException, IOException {
+    private static MyBodyPart createPart(MimePart headers, String base64) throws MessagingException, IOException {
         BiByteArrayStream bis = new BiByteArrayStream();
         LineOutputStream los = new LineOutputStream(bis.output());
         MimeUtil.writeHeaders(headers, los);
         los.writeln(base64); // todo: remove extra eoln???
         los.flush();
-        return new MimeBodyPart(bis.input());
+        return MyBodyPart.simple(bis.input());
     }
 
-    private static MimeBodyPart createCryptoPart(String mimeType, String fileName, String base64) throws MessagingException, IOException {
+    private static MyBodyPart createCryptoPart(String mimeType, String fileName, String base64) throws MessagingException, IOException {
         MimeBodyPart headers = new MimeBodyPart();
         headers.setHeader(CONTENT_TYPE, mimeType);
         headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
@@ -41,7 +41,7 @@ public final class PartBuilder {
         return createPart(headers, base64);
     }
 
-    private static MimeBodyPart createCryptoPart(String mimeSubType, String base64) throws MessagingException, IOException {
+    private static MyBodyPart createCryptoPart(String mimeSubType, String base64) throws MessagingException, IOException {
         return createCryptoPart("application/pkcs7-mime; smime-type=\"" + mimeSubType + "\"", "smime.p7m", base64);
     }
 
@@ -53,19 +53,19 @@ public final class PartBuilder {
         part.writeTo(new CRLFOutputStream(os));
     }
 
-    private static String partToString(Part part) throws IOException, MessagingException {
+    static String partToString(Part part) throws IOException, MessagingException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         write(part, bos);
         return bos.toString();
     }
 
-    public MimeBodyPart encrypt(Part part, EncryptKey key) throws CryptoException, IOException, MessagingException {
+    public MyBodyPart encrypt(MimeBodyPart part, EncryptKey key) throws CryptoException, IOException, MessagingException {
         String data = partToString(part);
         String encryptedData = getCrypto().encryptData(data, key);
         return createCryptoPart("enveloped-data", encryptedData);
     }
 
-    public MimeBodyPart sign(BodyPart part, SignKey key, boolean detached) throws MessagingException, IOException, CryptoException {
+    public MyBodyPart sign(BodyPart part, SignKey key, boolean detached) throws MessagingException, IOException, CryptoException {
         if (detached) {
             return signDetached(part, key);
         } else {
@@ -73,13 +73,13 @@ public final class PartBuilder {
         }
     }
 
-    public MimeBodyPart sign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
+    public MyBodyPart sign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         String data = partToString(part);
         String signedData = getCrypto().signData(data, key, false);
         return createCryptoPart("signed-data", signedData);
     }
 
-    public MimeBodyPart cosign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
+    public MyBodyPart cosign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         InputStream is = part.getInputStream();
         String cosignedData;
         try {
@@ -90,7 +90,7 @@ public final class PartBuilder {
         return createCryptoPart("signed-data", cosignedData);
     }
 
-    public MimeBodyPart signDetached(BodyPart part, SignKey key) throws MessagingException, CryptoException, IOException {
+    public MyBodyPart signDetached(BodyPart part, SignKey key) throws MessagingException, CryptoException, IOException {
         return signDetached(part, "This is an S/MIME multipart signed message", key);
     }
 
@@ -98,21 +98,18 @@ public final class PartBuilder {
         MimeMultipart mp = new MimeMultipart("signed; protocol=\"application/pkcs7-signature\"");
         mp.setPreamble(preamble);
         mp.addBodyPart(dataPart);
-        mp.addBodyPart(createCryptoPart("application/pkcs7-signature", "smime.p7s", signature));
+        mp.addBodyPart(createCryptoPart("application/pkcs7-signature", "smime.p7s", signature).getPart());
         return mp;
     }
 
-    public MimeBodyPart signDetached(BodyPart part, String preamble, SignKey key) throws MessagingException, CryptoException, IOException {
+    public MyBodyPart signDetached(BodyPart part, String preamble, SignKey key) throws MessagingException, CryptoException, IOException {
         String data = partToString(part);
         String signature = getCrypto().signData(data, key, true);
         MimeMultipart mp = createSignedMultipart(part, signature, preamble);
-        MimeBodyPart complexPart = new MimeBodyPart();
-        complexPart.setContent(mp);
-        complexPart.setHeader(CONTENT_TYPE, "multipart/signed; protocol=\"application/pkcs7-signature\"");
-        return complexPart;
+        return MyBodyPart.complex(mp);
     }
 
-    public void cosignDetached(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
+    public MyBodyPart cosignDetached(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         MimeMultipart mp = (MimeMultipart) part.getContent();
         BodyPart part1 = mp.getBodyPart(0);
         BodyPart part2 = mp.getBodyPart(1);
@@ -134,41 +131,39 @@ public final class PartBuilder {
             MimeUtil.close(is);
         }
         MimeMultipart newMp = createSignedMultipart(dataPart, cosigned, mp.getPreamble());
-        part.setContent(newMp);
+        return MyBodyPart.complex(newMp);
     }
 
-    public static MimeBodyPart createText(String text, String charset) throws MessagingException {
+    public static MyBodyPart createText(String text, String charset) throws MessagingException, IOException {
         MimeBodyPart part = new MimeBodyPart();
         part.setText(text, charset);
-        return part;
+        return MyBodyPart.simple(part);
     }
 
-    public static MimeBodyPart createMulti(BodyPart... parts) throws MessagingException {
+    public static MyBodyPart createMulti(BodyPart... parts) throws MessagingException {
         return createMulti(null, parts);
     }
 
-    public static MimeBodyPart createMulti(String preamble, BodyPart... parts) throws MessagingException {
-        MimeBodyPart complexPart = new MimeBodyPart();
-        MimeMultipart mp = new MimeMultipart();
+    public static MyBodyPart createMulti(String preamble, BodyPart... parts) throws MessagingException {
+        MimeMultipart mp = new MimeMultipart(); // todo: add subtype parameter???
         mp.setPreamble(preamble);
         for (BodyPart part : parts) {
             mp.addBodyPart(part);
         }
-        complexPart.setContent(mp);
-        return complexPart;
+        return MyBodyPart.complex(mp);
     }
 
-    public static MimeBodyPart createFile(InputStreamSource src, String contentType, String charset, String comment) throws MessagingException, IOException {
-        MimeBodyPart filePart = new MimeBodyPart();
-        String headers = src.getName();
-        filePart.setDescription(comment);
-        filePart.setHeader(CONTENT_TYPE, contentType);
-        filePart.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
+    public static MyBodyPart createFile(InputStreamSource src, String contentType, String charset, String comment) throws MessagingException, IOException {
+        MimeBodyPart headers = new MimeBodyPart();
+        String fileName = src.getName();
+        headers.setDescription(comment);
+        headers.setHeader(CONTENT_TYPE, contentType);
+        headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
         ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
-        disposition.setParameter("filename", MimeUtility.encodeText(headers, charset, "Q"));
-        filePart.setDisposition(disposition.toString());
+        disposition.setParameter("filename", MimeUtility.encodeText(fileName, charset, "Q"));
+        headers.setDisposition(disposition.toString());
         String base64 = Base64.base64(src.open());
-        return createPart(filePart, base64);
+        return createPart(headers, base64);
     }
 
     private static MimeMessage writeMessage(Session session, MimeMessage message, InputStream data) throws MessagingException, IOException {
@@ -177,20 +172,19 @@ public final class PartBuilder {
         MimeUtil.writeHeaders(message, los);
         MimeUtil.copyStreamEoln(data, los);
         los.flush();
-        MimeMessage newMessage = new MimeMessage(session, bis.input());
-        newMessage.saveChanges();
-        return newMessage;
+        return new MimeMessage(session, bis.input());
     }
 
-    public static MimeMessage toMessage(Session session, MimeBodyPart part) throws MessagingException, IOException {
+    public static MimeMessage toMessage(Session session, MyBodyPart myPart) throws MessagingException, IOException {
         MimeMessage message = new MimeMessage(session);
 
+        MimeBodyPart part = myPart.getPart();
         Object content = part.getContent();
+        MimeMessage result;
         if (content instanceof Multipart) {
             Multipart mp = (Multipart) content;
             message.setContent(mp);
-            message.saveChanges();
-            return message;
+            result = message;
         } else {
             message.saveChanges();
             Enumeration<?> headers = part.getAllHeaderLines();
@@ -200,25 +194,12 @@ public final class PartBuilder {
             }
             InputStream is = part.getRawInputStream();
             try {
-                return writeMessage(session, message, is);
+                result = writeMessage(session, message, is);
             } finally {
                 MimeUtil.close(is);
             }
         }
-    }
-
-    public static MimeBodyPart messageToPart(MimeMessage message) throws IOException, MessagingException {
-        message.saveChanges();
-        BiByteArrayStream bis = new BiByteArrayStream();
-        message.writeTo(bis.output());
-        MimeBodyPart mbp = new MimeBodyPart(bis.input());
-        Enumeration<?> extraHeaders = mbp.getNonMatchingHeaders(new String[] {
-            CONTENT_TYPE, CONTENT_TRANSFER_ENCODING, "Content-Description", "Content-Disposition"
-        });
-        while (extraHeaders.hasMoreElements()) {
-            Header header = (Header) extraHeaders.nextElement();
-            mbp.removeHeader(header.getName());
-        }
-        return mbp;
+        result.saveChanges();
+        return result;
     }
 }
