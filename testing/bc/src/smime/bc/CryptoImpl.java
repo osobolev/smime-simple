@@ -42,11 +42,11 @@ final class CryptoImpl implements Crypto {
 
     private static SignInfo verify(SignerInformation signer, X509CertificateHolder holder) {
         boolean ok = false;
-        Exception error = null;
+        String error = null;
         try {
             ok = signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(holder));
         } catch (Exception ex) {
-            error = ex;
+            error = ex.toString();
         }
         Map<String, String> info = new HashMap<String, String>();
         info.put("name", holder.getSubject().toString());

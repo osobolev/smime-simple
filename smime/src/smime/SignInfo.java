@@ -17,9 +17,9 @@ public final class SignInfo {
     /**
      * Can be null
      */
-    public final Exception error; // todo: change to String???
+    public final String error;
 
-    public SignInfo(Date signDate, Map<String, String> info, boolean verified, Exception error) {
+    public SignInfo(Date signDate, Map<String, String> info, boolean verified, String error) {
         this.signDate = signDate;
         this.info = info;
         this.verified = verified;
