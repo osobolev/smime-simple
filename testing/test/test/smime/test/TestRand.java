@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public final class Test {
+public final class TestRand {
 
     public static void main(String[] args) throws Exception {
         Security.addProvider(new BouncyCastleProvider());
