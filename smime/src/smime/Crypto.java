@@ -49,5 +49,5 @@ public interface Crypto {
      * @param signature raw data (if data is null then data+signature, else detached signature)
      * @return BASE64-encoded signature
      */
-    String cosignData(String data, InputStream signature, SignKey key, boolean detached) throws CryptoException, IOException;
+    String cosignData(String data, InputStream signature, SignKey key) throws CryptoException, IOException;
 }

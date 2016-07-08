@@ -62,18 +62,16 @@ public final class CryptoTest {
         }
         {
             String data = "ABBA";
-            boolean detached = true;
-            String sdetached = crypto.signData(data, key1.getSignKey(), detached);
-            String cosigned = crypto.cosignData(data, unbase64(sdetached), key2.getSignKey(), detached);
+            String sdetached = crypto.signData(data, key1.getSignKey(), true);
+            String cosigned = crypto.cosignData(data, unbase64(sdetached), key2.getSignKey());
             List<SignInfo> signers = new ArrayList<SignInfo>();
             crypto.getSignersDetached(data, unbase64(cosigned), signers);
             System.out.println(signers);
         }
         {
             String data = "ABBA";
-            boolean detached = false;
-            String sundetached = crypto.signData(data, key1.getSignKey(), detached);
-            String cosigned = crypto.cosignData(null, unbase64(sundetached), key2.getSignKey(), detached);
+            String sundetached = crypto.signData(data, key1.getSignKey(), false);
+            String cosigned = crypto.cosignData(null, unbase64(sundetached), key2.getSignKey());
             List<SignInfo> signers = new ArrayList<SignInfo>();
             String sdata = crypto.getSigners(unbase64(cosigned), signers);
             System.out.println(sdata);

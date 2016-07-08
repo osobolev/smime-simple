@@ -58,7 +58,7 @@ class PartBuilderInternal {
         InputStream is = part.getInputStream();
         String cosignedData;
         try {
-            cosignedData = getCrypto().cosignData(null, is, key, false);
+            cosignedData = getCrypto().cosignData(null, is, key);
         } finally {
             MimeUtil.close(is);
         }
@@ -97,7 +97,7 @@ class PartBuilderInternal {
         InputStream is = signaturePart.getInputStream();
         String cosigned;
         try {
-            cosigned = getCrypto().cosignData(data, is, key, true);
+            cosigned = getCrypto().cosignData(data, is, key);
         } finally {
             MimeUtil.close(is);
         }

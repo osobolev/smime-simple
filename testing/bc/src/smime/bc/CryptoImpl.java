@@ -148,17 +148,20 @@ final class CryptoImpl implements Crypto {
         }
     }
 
-    public String cosignData(String data, InputStream signature, SignKey key, boolean detached) throws CryptoException, IOException {
+    public String cosignData(String data, InputStream signature, SignKey key) throws CryptoException, IOException {
         SignKeyImpl impl = (SignKeyImpl) key;
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
         try {
             DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
             CMSSignedDataParser sp;
+            boolean encapsulate;
             if (data != null) {
                 sp = new CMSSignedDataParser(digestCalculatorProvider, new CMSTypedStream(raw(data)), signature);
+                encapsulate = false;
             } else {
                 sp = new CMSSignedDataParser(digestCalculatorProvider, signature);
                 data = extractData(sp);
+                encapsulate = true;
             }
             Store<?> store = new JcaCertStore(Collections.singletonList(impl.certificate));
             ContentSigner contentSigner = new JcaContentSignerBuilder(KeyData.ALGORITHM).setProvider(BC).build(impl.key);
@@ -166,7 +169,7 @@ final class CryptoImpl implements Crypto {
             gen.addCertificates(sp.getCertificates());
             gen.addCertificates(store);
             gen.addSigners(sp.getSignerInfos());
-            CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), !detached);
+            CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), encapsulate);
             return base64(cms.getEncoded());
         } catch (CMSException ex) {
             throw new CryptoExceptionImpl(ex);

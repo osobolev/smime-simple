@@ -106,7 +106,7 @@ final class MailWriter {
             if (envelope.type == EnvelopeDesc.COSIGN) {
                 String cosignedData;
                 if (envelope.rawData == null) {
-                    cosignedData = getCrypto().cosignData(null, envelope.rawSignature.getInputStream(), envelope.signKey, false);
+                    cosignedData = getCrypto().cosignData(null, envelope.rawSignature.getInputStream(), envelope.signKey);
                 } else {
                     HeadersWithData hwd = signedMultipart(
                         null, factory, null, null, null, envelope.rawData, envelope.rawSignature, envelope.signKey
@@ -227,7 +227,7 @@ final class MailWriter {
         } else {
             plainPart = null;
             data = null;
-            signature = factory.getCrypto().cosignData(rawData, rawSignature.getInputStream(), signCert, true);
+            signature = factory.getCrypto().cosignData(rawData, rawSignature.getInputStream(), signCert);
         }
 
         MimeBodyPart signPart = new MimeBodyPart();
