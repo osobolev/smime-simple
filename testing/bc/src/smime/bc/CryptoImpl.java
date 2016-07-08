@@ -1,14 +1,9 @@
 package smime.bc;
 
-import com.sun.mail.util.BASE64DecoderStream;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cms.*;
-import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
-import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
-import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
-import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.cms.jcajce.*;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -23,11 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Security;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.util.*;
 
 final class CryptoImpl implements Crypto {
@@ -146,8 +137,8 @@ final class CryptoImpl implements Crypto {
             KeyTransRecipientId rid = (KeyTransRecipientId) ri.getRID();
             BigInteger serialNumber = rid.getSerialNumber();
             for (KeyData storedKey : storedKeys) {
-                if (storedKey.matches(serialNumber)) {
-                    Recipient recipient = storedKey.getRecipient();
+                if (storedKey.getSerialNumber().equals(serialNumber)) {
+                    Recipient recipient = new JceKeyTransEnvelopedRecipient(storedKey.privateKey);
                     return new String(ri.getContent(recipient));
                 }
             }
@@ -192,66 +183,5 @@ final class CryptoImpl implements Crypto {
 
     private static InputStream raw(String str) {
         return new ByteArrayInputStream(str.getBytes());
-    }
-
-    private static InputStream unbase64(String str) throws IOException {
-        BASE64DecoderStream stream = new BASE64DecoderStream(raw(str));
-        BiByteArrayStream bis = new BiByteArrayStream();
-        while (true) {
-            int c = stream.read();
-            if (c < 0)
-                break;
-            bis.output().write(c);
-        }
-        return bis.input();
-    }
-
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
-    public static void main(String[] args) throws CryptoException, IOException, NoSuchAlgorithmException, NoSuchProviderException, OperatorCreationException, CertificateException {
-        Security.addProvider(new BouncyCastleProvider());
-
-        KeyData key1 = KeyData.create(1);
-        KeyData key2 = KeyData.create(2);
-
-        CryptoFactoryImpl factory = new CryptoFactoryImpl(Arrays.asList(key1, key2));
-        Crypto crypto = factory.getCrypto();
-        {
-            String encrypted = crypto.encryptData("Xyzzy", key1.getEncryptKey());
-            String s = crypto.decryptData(unbase64(encrypted));
-            System.out.println(s);
-        }
-        {
-            String undetached = crypto.signData("ABBA", key1.getSignKey(), false);
-            List<SignInfo> signers = new ArrayList<SignInfo>();
-            String data = crypto.getSigners(unbase64(undetached), signers);
-            System.out.println(data);
-            System.out.println(signers);
-        }
-        {
-            String data = "ABBA";
-            String detached = crypto.signData(data, key1.getSignKey(), true);
-            List<SignInfo> dsigners = new ArrayList<SignInfo>();
-            crypto.getSignersDetached(data, unbase64(detached), dsigners);
-            System.out.println(dsigners);
-        }
-        {
-            String data = "ABBA";
-            boolean detached = true;
-            String sdetached = crypto.signData(data, key1.getSignKey(), detached);
-            String cosigned = crypto.cosignData(data, unbase64(sdetached), key2.getSignKey(), detached);
-            List<SignInfo> signers = new ArrayList<SignInfo>();
-            crypto.getSignersDetached(data, unbase64(cosigned), signers);
-            System.out.println(signers);
-        }
-        {
-            String data = "ABBA";
-            boolean detached = false;
-            String sundetached = crypto.signData(data, key1.getSignKey(), detached);
-            String cosigned = crypto.cosignData(null, unbase64(sundetached), key2.getSignKey(), detached);
-            List<SignInfo> signers = new ArrayList<SignInfo>();
-            String sdata = crypto.getSigners(unbase64(cosigned), signers);
-            System.out.println(sdata);
-            System.out.println(signers);
-        }
     }
 }

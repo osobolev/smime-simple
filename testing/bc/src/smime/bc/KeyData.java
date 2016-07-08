@@ -65,15 +65,7 @@ public final class KeyData {
         return new EncryptKeyImpl(certificate);
     }
 
-    boolean matches(BigInteger serial) {
-        return getSerialNumber().equals(serial);
-    }
-
     public BigInteger getSerialNumber() {
         return certificate.getSerialNumber();
-    }
-
-    Recipient getRecipient() {
-        return new JceKeyTransEnvelopedRecipient(privateKey);
     }
 }
