@@ -32,7 +32,7 @@ public final class RandomMessageBuilder {
 
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
 
-    private static String randomString(Random rnd) {
+    public static String randomString(Random rnd) {
         int len = rnd.nextInt(20) + 1;
         StringBuilder buf = new StringBuilder(len);
         for (int i = 0; i < len; i++) {
@@ -129,6 +129,8 @@ public final class RandomMessageBuilder {
                 checkOld(factory, rm.message, rm.fileName, rm.content);
             }
         } catch (Exception ex) {
+            System.out.println("File: " + rm.fileName);
+            System.out.println("Content: " + rm.content);
             System.out.println(rm.description);
             rm.message.writeTo(System.out);
             System.out.flush();

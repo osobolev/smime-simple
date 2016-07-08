@@ -3,9 +3,7 @@ package smime;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Part;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimePart;
-import java.io.IOException;
+`import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
@@ -18,16 +16,6 @@ public final class SignedPart {
     final String rawData;
     final Part rawSignature;
     public final Throwable error;
-
-    SignedPart(MimeMessage message, MimePart dataPart, SignInfo[] signatures,
-               String rawData, Part rawSignature, Throwable error) {
-        this.message = message;
-        this.dataPart = dataPart;
-        this.signatures = signatures;
-        this.rawData = rawData;
-        this.rawSignature = rawSignature;
-        this.error = error;
-    }
 
     SignedPart(Message message, Part dataPart, List<SignInfo> signatures, String rawData, Part rawSignature) throws IOException, MessagingException {
         this(message, dataPart, signatures.toArray(new SignInfo[signatures.size()]), rawData, rawSignature, null);
