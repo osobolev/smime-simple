@@ -3,7 +3,7 @@ package smime;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Part;
-`import java.io.IOException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;

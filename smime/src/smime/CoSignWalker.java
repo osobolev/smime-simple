@@ -32,13 +32,21 @@ public final class CoSignWalker {
     private MyBodyPart walk(MimePart part, boolean[] signed) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
             signed[0] = true;
-            return builder.cosignDetached(part, addKey);
+            if (addKey == null) {
+                return PartBuilder.fromPart(part);
+            } else {
+                return builder.cosignDetached(part, addKey);
+            }
         } else if (part.isMimeType("application/pkcs7-mime")) {
             ContentType contentType = new ContentType(part.getContentType());
             String smime = contentType.getParameter("smime-type");
             if ("signed-data".equals(smime)) {
                 signed[0] = true;
-                return builder.cosign(part, addKey);
+                if (addKey == null) {
+                    return PartBuilder.fromPart(part);
+                } else {
+                    return builder.cosign(part, addKey);
+                }
             } else {
                 InputStream is = part.getInputStream();
                 String decrypted;
@@ -68,7 +76,7 @@ public final class CoSignWalker {
             }
             return MyBodyPart.complex(newMp);
         } else {
-            return MyBodyPart.simple(part);
+            return PartBuilder.fromPart(part);
         }
     }
 }
