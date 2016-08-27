@@ -7,10 +7,10 @@ import java.io.IOException;
 
 public final class CoSignedMessage {
 
-    private final MyBodyPart part;
+    private final SMimePart part;
     private final boolean signed;
 
-    public CoSignedMessage(MyBodyPart part, boolean signed) {
+    public CoSignedMessage(SMimePart part, boolean signed) {
         this.part = part;
         this.signed = signed;
     }
@@ -24,12 +24,12 @@ public final class CoSignedMessage {
     }
 
     public CoSignedMessage sign(PartBuilder builder, SignKey key, boolean detached) throws IOException, MessagingException, CryptoException {
-        MyBodyPart signed = builder.sign(part, key, detached);
+        SMimePart signed = builder.sign(part, key, detached);
         return new CoSignedMessage(signed, true);
     }
 
     public CoSignedMessage encrypt(PartBuilder builder, EncryptKey key) throws IOException, MessagingException, CryptoException {
-        MyBodyPart encrypted = builder.encrypt(part, key);
+        SMimePart encrypted = builder.encrypt(part, key);
         return new CoSignedMessage(encrypted, signed);
     }
 }

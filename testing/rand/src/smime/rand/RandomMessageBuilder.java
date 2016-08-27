@@ -53,9 +53,9 @@ public final class RandomMessageBuilder {
         boolean signed = false;
         if (isNew) {
             buf.append("New");
-            MyBodyPart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
+            SMimePart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
             int envelopes = rnd.nextInt(5);
-            MyBodyPart current = filePart;
+            SMimePart current = filePart;
             boolean wasDetached = false;
             boolean wasWrapped = false;
             for (int j = 0; j < envelopes; j++) {
@@ -64,7 +64,7 @@ public final class RandomMessageBuilder {
                     int nparts = rnd.nextInt(2) + 2;
                     buf.append(" Wrapped " + nparts);
                     wasWrapped = true;
-                    MyBodyPart[] parts = new MyBodyPart[nparts];
+                    SMimePart[] parts = new SMimePart[nparts];
                     for (int k = 0; k < nparts - 1; k++) {
                         parts[k] = PartBuilder.createText("Hello " + (k + 1), "Windows-1251");
                     }

@@ -20,7 +20,7 @@ public final class CoSignWalker {
 
     public CoSignedMessage walk(MimeMessage message) throws MessagingException, IOException, CryptoException {
         boolean[] signed = new boolean[1];
-        MyBodyPart part = walk(message, signed);
+        SMimePart part = walk(message, signed);
         return new CoSignedMessage(part, signed[0]);
     }
 
@@ -29,7 +29,7 @@ public final class CoSignWalker {
     }
 
     @SuppressWarnings("TailRecursion")
-    private MyBodyPart walk(MimePart part, boolean[] signed) throws MessagingException, IOException, CryptoException {
+    private SMimePart walk(MimePart part, boolean[] signed) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
             signed[0] = true;
             if (addKey == null) {
@@ -71,10 +71,10 @@ public final class CoSignWalker {
             int count = mp.getCount();
             for (int i = 0; i < count; i++) {
                 MimeBodyPart child = (MimeBodyPart) mp.getBodyPart(i);
-                MyBodyPart newChild = walk(child, signed);
+                SMimePart newChild = walk(child, signed);
                 newMp.addBodyPart(newChild.getPart());
             }
-            return MyBodyPart.complex(newMp);
+            return SMimePart.complex(newMp);
         } else {
             return PartBuilder.fromPart(part);
         }

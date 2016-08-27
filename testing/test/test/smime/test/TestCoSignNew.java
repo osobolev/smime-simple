@@ -33,8 +33,8 @@ public final class TestCoSignNew {
         Session session = SMimeReceive.createFakeSession();
 
         PartBuilder builder = new PartBuilder(factory);
-        MyBodyPart file = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
-        MyBodyPart signed = builder.sign(file, key1.getSignKey(), true);
+        SMimePart file = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
+        SMimePart signed = builder.sign(file, key1.getSignKey(), true);
         MimeMessage message = PartBuilder.toMessage(session, signed);
         message.setSubject("Subj");
 

@@ -7,7 +7,7 @@ import javax.mail.internet.MimeBodyPart;
 import java.io.IOException;
 import java.io.InputStream;
 
-public final class MyBodyPart {
+public final class SMimePart {
 
     private static final class CommitablePart extends MimeBodyPart {
 
@@ -30,23 +30,23 @@ public final class MyBodyPart {
 
     private final CommitablePart part;
 
-    private MyBodyPart(CommitablePart part) {
+    private SMimePart(CommitablePart part) {
         this.part = part;
     }
 
-    static MyBodyPart complex(Multipart mp) throws MessagingException {
+    static SMimePart complex(Multipart mp) throws MessagingException {
         CommitablePart complexPart = new CommitablePart();
         complexPart.setContent(mp);
-        return new MyBodyPart(complexPart);
+        return new SMimePart(complexPart);
     }
 
-    static MyBodyPart simple(InputStream is) throws MessagingException {
-        return new MyBodyPart(new CommitablePart(is));
+    static SMimePart simple(InputStream is) throws MessagingException {
+        return new SMimePart(new CommitablePart(is));
     }
 
-    static MyBodyPart simple(Part part) throws IOException, MessagingException {
+    static SMimePart simple(Part part) throws IOException, MessagingException {
         if (part instanceof CommitablePart) {
-            return new MyBodyPart((CommitablePart) part);
+            return new SMimePart((CommitablePart) part);
         } else {
             return simple(MimeUtil.serialize(part));
         }

@@ -42,10 +42,10 @@ public final class Test1 {
 
         {
             PartBuilder builder = new PartBuilder(factory);
-            MyBodyPart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
-            MyBodyPart textPart = PartBuilder.createText("Hello!", "Windows-1251");
-            MyBodyPart multiPart = PartBuilder.createMulti(textPart, filePart);
-            MyBodyPart signed = builder.signDetached(multiPart, key1.getSignKey());
+            SMimePart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
+            SMimePart textPart = PartBuilder.createText("Hello!", "Windows-1251");
+            SMimePart multiPart = PartBuilder.createMulti(textPart, filePart);
+            SMimePart signed = builder.signDetached(multiPart, key1.getSignKey());
 //            MyBodyPart encrypted = builder.encrypt(multiPart.getPart(), key1.getEncryptKey());
             MimeMessage message = PartBuilder.toMessage(session, signed);
             message.writeTo(System.out);
