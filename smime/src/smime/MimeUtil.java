@@ -7,7 +7,6 @@ import com.sun.mail.util.LineOutputStream;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.internet.MimePart;
-import javax.mail.internet.MimeUtility;
 import java.io.*;
 import java.util.Enumeration;
 
@@ -29,17 +28,6 @@ public final class MimeUtil {
         os.close();
         is.close();
         return bos.toString();
-    }
-
-    public static String getFileName(Part dataPart) throws MessagingException {
-        String fileName = dataPart.getFileName();
-        if (fileName == null)
-            return null;
-        try {
-            return MimeUtility.decodeText(fileName);
-        } catch (UnsupportedEncodingException ex) {
-            return fileName;
-        }
     }
 
     static InputStream serialize(Part part) throws MessagingException, IOException {

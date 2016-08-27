@@ -7,9 +7,11 @@ import javax.mail.Part;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeUtility;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,6 +90,17 @@ public final class PartWalker {
             }
         } else {
             callback.leafPart(part, signed);
+        }
+    }
+
+    public static String getFileName(Part dataPart) throws MessagingException {
+        String fileName = dataPart.getFileName();
+        if (fileName == null)
+            return null;
+        try {
+            return MimeUtility.decodeText(fileName);
+        } catch (UnsupportedEncodingException ex) {
+            return fileName;
         }
     }
 }
