@@ -45,6 +45,7 @@ final class CryptoImpl implements Crypto {
 
     }
 
+    @SuppressWarnings("unchecked")
     private static void getSigners(CMSSignedDataParser sp, List<SignInfo> sis) throws CMSException {
         Store<?> certificates = sp.getCertificates();
         Collection<SignerInformation> signers = sp.getSignerInfos().getSigners();
