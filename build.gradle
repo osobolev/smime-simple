@@ -22,7 +22,7 @@ subprojects {
 
 project(':smime') {
     dependencies {
-        compile 'javax.mail:mail:1.4.7'
+        compile 'com.sun.mail:javax.mail:1.4.7'
     }
 }
 
