@@ -35,7 +35,7 @@ public final class SignedPart {
     }
 
     /**
-     * Не закрывает потоки!
+     * Does not close streams!
      */
     public static void copyStream(InputStream in, OutputStream out) throws IOException {
         byte[] arr = new byte[1024];

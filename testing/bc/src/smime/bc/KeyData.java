@@ -44,7 +44,7 @@ public final class KeyData {
         long now = System.currentTimeMillis();
         long year = 365 * 24 * 60 * 60 * 1000L;
 
-        X500Name name = new X500Name("CN=Test" + n + ", O=ATS, L=Moscow, C=RU");
+        X500Name name = new X500Name("CN=Test" + n + ", O=TestOrg, L=Moscow, C=RU");
         JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
             name,
             BigInteger.valueOf(serialNum),
