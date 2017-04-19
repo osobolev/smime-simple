@@ -10,9 +10,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="smime_main" />
-    <orderEntry type="library" name="Gradle: org.bouncycastle:bcprov-jdk15on:1.54" level="project" />
-    <orderEntry type="library" name="Gradle: org.bouncycastle:bcpkix-jdk15on:1.54" level="project" />
     <orderEntry type="library" name="Gradle: com.sun.mail:javax.mail:1.4.7" level="project" />
-    <orderEntry type="library" name="Gradle: javax.activation:activation:1.1" level="project" />
   </component>
 </module>

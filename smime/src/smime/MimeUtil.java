@@ -16,18 +16,24 @@ public final class MimeUtil {
         part.writeTo(new CRLFOutputStream(os));
     }
 
+    /**
+     * Closes input stream!
+     */
     public static String base64(InputStream is) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        OutputStream os = new BASE64EncoderStream(bos, 64);
-        while (true) {
-            int b = is.read();
-            if (b < 0)
-                break;
-            os.write(b);
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            OutputStream os = new BASE64EncoderStream(bos, 64);
+            while (true) {
+                int b = is.read();
+                if (b < 0)
+                    break;
+                os.write(b);
+            }
+            os.close();
+            return bos.toString();
+        } finally {
+            close(is);
         }
-        os.close();
-        is.close();
-        return bos.toString();
     }
 
     static InputStream serialize(Part part) throws MessagingException, IOException {
