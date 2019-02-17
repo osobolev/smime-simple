@@ -5,8 +5,8 @@ subprojects {
     group = 'com.github.osobolev.smime-simple'
     version = '1.0'
 
-    sourceCompatibility = '1.6'
-    targetCompatibility = '1.6'
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
                              
     compileJava.options.encoding = 'UTF-8'
 
