@@ -48,7 +48,7 @@ public final class TestCrypto {
         }
         {
             String undetached = crypto.signData(data, sign1, false);
-            List<SignInfo> signers = new ArrayList<SignInfo>();
+            List<SignInfo> signers = new ArrayList<>();
             String sdata = crypto.getSigners(unbase64(undetached), signers);
             checkEqual(data, sdata);
             checkSize(signers, 1);
@@ -58,7 +58,7 @@ public final class TestCrypto {
         }
         {
             String detached = crypto.signData(data, sign1, true);
-            List<SignInfo> dsigners = new ArrayList<SignInfo>();
+            List<SignInfo> dsigners = new ArrayList<>();
             crypto.getSignersDetached(data, unbase64(detached), dsigners);
             checkSize(dsigners, 1);
             if (printSignatures) {
@@ -68,7 +68,7 @@ public final class TestCrypto {
         {
             String sdetached = crypto.signData(data, sign1, true);
             String cosigned = crypto.cosignData(data, unbase64(sdetached), sign2);
-            List<SignInfo> signers = new ArrayList<SignInfo>();
+            List<SignInfo> signers = new ArrayList<>();
             crypto.getSignersDetached(data, unbase64(cosigned), signers);
             checkSize(signers, 2);
             if (printSignatures) {
@@ -78,7 +78,7 @@ public final class TestCrypto {
         {
             String sundetached = crypto.signData(data, sign1, false);
             String cosigned = crypto.cosignData(null, unbase64(sundetached), sign2);
-            List<SignInfo> signers = new ArrayList<SignInfo>();
+            List<SignInfo> signers = new ArrayList<>();
             String sdata = crypto.getSigners(unbase64(cosigned), signers);
             checkEqual(data, sdata);
             checkSize(signers, 2);

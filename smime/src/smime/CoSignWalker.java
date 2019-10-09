@@ -48,12 +48,9 @@ public final class CoSignWalker {
                     return builder.cosign(part, addKey);
                 }
             } else {
-                InputStream is = part.getInputStream();
                 String decrypted;
-                try {
+                try (InputStream is = part.getInputStream()) {
                     decrypted = getCrypto().decryptData(is);
-                } finally {
-                    MimeUtil.close(is);
                 }
                 return walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())), signed);
             }

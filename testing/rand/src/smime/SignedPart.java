@@ -18,7 +18,7 @@ public final class SignedPart {
     public final Throwable error;
 
     SignedPart(Message message, Part dataPart, List<SignInfo> signatures, String rawData, Part rawSignature) throws IOException, MessagingException {
-        this(message, dataPart, signatures.toArray(new SignInfo[signatures.size()]), rawData, rawSignature, null);
+        this(message, dataPart, signatures.toArray(new SignInfo[0]), rawData, rawSignature, null);
     }
 
     SignedPart(Message message, Part dataPart, SignInfo[] signatures, String rawData, Part rawSignature, Throwable error) throws IOException, MessagingException {

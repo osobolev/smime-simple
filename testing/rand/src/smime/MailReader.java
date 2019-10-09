@@ -24,7 +24,7 @@ final class MailReader {
 
         private final MimeMessage msg;
         private final boolean needRaw;
-        private final List<SignInfo> certificates = new ArrayList<SignInfo>();
+        private final List<SignInfo> certificates = new ArrayList<>();
 
         private Environment(CryptoFactory factory, MimeMessage msg, boolean needRaw) {
             this.factory = factory;

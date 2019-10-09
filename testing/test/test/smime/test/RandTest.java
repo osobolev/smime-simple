@@ -17,9 +17,9 @@ public final class RandTest {
     public static void main(String[] args) throws Exception {
         Security.addProvider(new BouncyCastleProvider());
 
-        List<KeyData> keys = new ArrayList<KeyData>();
-        List<SignKey> skeys = new ArrayList<SignKey>();
-        List<EncryptKey> ekeys = new ArrayList<EncryptKey>();
+        List<KeyData> keys = new ArrayList<>();
+        List<SignKey> skeys = new ArrayList<>();
+        List<EncryptKey> ekeys = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {
             KeyData key = KeyData.create(i);
             keys.add(key);

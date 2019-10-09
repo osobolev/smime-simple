@@ -16,24 +16,17 @@ public final class MimeUtil {
         part.writeTo(new CRLFOutputStream(os));
     }
 
-    /**
-     * Closes input stream!
-     */
     public static String base64(InputStream is) throws IOException {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            OutputStream os = new BASE64EncoderStream(bos, 64);
-            while (true) {
-                int b = is.read();
-                if (b < 0)
-                    break;
-                os.write(b);
-            }
-            os.close();
-            return bos.toString();
-        } finally {
-            close(is);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OutputStream os = new BASE64EncoderStream(bos, 64);
+        while (true) {
+            int b = is.read();
+            if (b < 0)
+                break;
+            os.write(b);
         }
+        os.close();
+        return bos.toString();
     }
 
     static InputStream serialize(Part part) throws MessagingException, IOException {
@@ -57,13 +50,5 @@ public final class MimeUtil {
         }
         los.writeln();
         los.writeln(base64); // todo: remove extra eoln???
-    }
-
-    static void close(Closeable c) {
-        try {
-            c.close();
-        } catch (IOException ex) {
-            // ignore
-        }
     }
 }

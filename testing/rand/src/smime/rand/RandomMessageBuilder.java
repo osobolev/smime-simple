@@ -174,16 +174,14 @@ public final class RandomMessageBuilder {
 
     private static void checkNew(CryptoFactory factory, MimeMessage message,
                                  String requiredFileName, String requiredContent) throws CryptoException, IOException, MessagingException {
-        final Part[] foundPart = new Part[1];
-        PartWalker partWalker = new PartWalker(factory, new PartCallback() {
-            public void leafPart(Part part, List<SignInfo> signed) throws MessagingException {
-                if (part.getFileName() != null) {
-                    foundPart[0] = part;
-                }
-                for (SignInfo signInfo : signed) {
-                    if (!signInfo.verified) {
-                        throw new IllegalStateException("Not verified: " + signInfo.info + " (" + signInfo.error + ")");
-                    }
+        Part[] foundPart = new Part[1];
+        PartWalker partWalker = new PartWalker(factory, (part, signed) -> {
+            if (part.getFileName() != null) {
+                foundPart[0] = part;
+            }
+            for (SignInfo signInfo : signed) {
+                if (!signInfo.verified) {
+                    throw new IllegalStateException("Not verified: " + signInfo.info + " (" + signInfo.error + ")");
                 }
             }
         });

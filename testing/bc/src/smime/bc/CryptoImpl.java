@@ -39,7 +39,7 @@ final class CryptoImpl implements Crypto {
         } catch (Exception ex) {
             error = ex.toString();
         }
-        Map<String, String> info = new HashMap<String, String>();
+        Map<String, String> info = new HashMap<>();
         info.put("name", holder.getSubject().toString());
         return new SignInfo(null, info, ok, error);
 
@@ -60,9 +60,10 @@ final class CryptoImpl implements Crypto {
     }
 
     private static String extractData(CMSSignedDataParser sp) throws IOException {
-        InputStream is = sp.getSignedContent().getContentStream();
-        byte[] bytes = Streams.readAll(is);
-        is.close();
+        byte[] bytes;
+        try (InputStream is = sp.getSignedContent().getContentStream()) {
+            bytes = Streams.readAll(is);
+        }
         return new String(bytes);
     }
 
@@ -73,9 +74,7 @@ final class CryptoImpl implements Crypto {
             String rawData = extractData(sp);
             getSigners(sp, signers);
             return rawData;
-        } catch (CMSException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (OperatorCreationException ex) {
+        } catch (CMSException | OperatorCreationException ex) {
             throw new CryptoExceptionImpl(ex);
         }
     }
@@ -86,9 +85,7 @@ final class CryptoImpl implements Crypto {
             CMSSignedDataParser sp = new CMSSignedDataParser(digestCalculatorProvider, new CMSTypedStream(raw(data)), signature);
             sp.getSignedContent().drain();
             getSigners(sp, signers);
-        } catch (CMSException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (OperatorCreationException ex) {
+        } catch (CMSException | OperatorCreationException ex) {
             throw new CryptoExceptionImpl(ex);
         }
     }
@@ -104,11 +101,7 @@ final class CryptoImpl implements Crypto {
             gen.addCertificates(store);
             CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), !detached);
             return base64(cms.getEncoded());
-        } catch (CMSException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (CertificateEncodingException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (OperatorCreationException ex) {
+        } catch (CMSException | CertificateEncodingException | OperatorCreationException ex) {
             throw new CryptoExceptionImpl(ex);
         }
     }
@@ -121,9 +114,7 @@ final class CryptoImpl implements Crypto {
             OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build();
             CMSEnvelopedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), encryptor);
             return base64(cms.getEncoded());
-        } catch (CertificateEncodingException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (CMSException ex) {
+        } catch (CertificateEncodingException | CMSException ex) {
             throw new CryptoExceptionImpl(ex);
         }
     }
@@ -172,11 +163,7 @@ final class CryptoImpl implements Crypto {
             gen.addSigners(sp.getSignerInfos());
             CMSSignedData cms = gen.generate(new CMSProcessableByteArray(data.getBytes()), encapsulate);
             return base64(cms.getEncoded());
-        } catch (CMSException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (CertificateEncodingException ex) {
-            throw new CryptoExceptionImpl(ex);
-        } catch (OperatorCreationException ex) {
+        } catch (CMSException | CertificateEncodingException | OperatorCreationException ex) {
             throw new CryptoExceptionImpl(ex);
         }
     }

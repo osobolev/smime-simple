@@ -8,7 +8,6 @@ import smime.bc.KeyData;
 import smime.rand.RandomMessageBuilder;
 
 import javax.mail.MessagingException;
-import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
@@ -40,15 +39,13 @@ public final class TestCoSign {
             factory, session, message, new SignKey[] {key2.getSignKey()}, null
         );
 
-        new PartWalker(factory, new PartCallback() {
-            public void leafPart(Part part, List<SignInfo> signed) {
-                try {
-                    System.out.println(part.getContent());
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                System.out.println(signed);
+        new PartWalker(factory, (part, signed) -> {
+            try {
+                System.out.println(part.getContent());
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
+            System.out.println(signed);
         }).walk(cosigned);
     }
 }

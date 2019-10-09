@@ -55,12 +55,9 @@ class PartBuilderInternal {
     }
 
     final SMimePart cosign(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
-        InputStream is = part.getInputStream();
         String cosignedData;
-        try {
+        try (InputStream is = part.getInputStream()) {
             cosignedData = getCrypto().cosignData(null, is, key);
-        } finally {
-            MimeUtil.close(is);
         }
         return createCryptoPart("signed-data", cosignedData);
     }
@@ -94,12 +91,9 @@ class PartBuilderInternal {
             dataPart = part1;
         }
         String data = MimeUtil.partToString(dataPart);
-        InputStream is = signaturePart.getInputStream();
         String cosigned;
-        try {
+        try (InputStream is = signaturePart.getInputStream()) {
             cosigned = getCrypto().cosignData(data, is, key);
-        } finally {
-            MimeUtil.close(is);
         }
         MimeMultipart newMp = createSignedMultipart(dataPart, cosigned, mp.getPreamble());
         return SMimePart.complex(newMp);
@@ -119,7 +113,10 @@ class PartBuilderInternal {
         ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
         disposition.setParameter("filename", MimeUtility.encodeText(src.getName(), charset, "Q"));
         headers.setDisposition(disposition.toString());
-        String base64 = MimeUtil.base64(src.open());
+        String base64;
+        try (InputStream is = src.open()) {
+            base64 = MimeUtil.base64(is);
+        }
         return createPart(headers, base64);
     }
 

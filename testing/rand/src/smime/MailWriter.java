@@ -6,10 +6,7 @@ import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.internet.*;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -67,7 +64,7 @@ final class MailWriter {
                                       String charset, InputStreamSource src, String comment,
                                       SignedPart sp,
                                       EncryptKey encryptCert, SignKey[] signCerts) throws MessagingException, IOException, CryptoException {
-        List<EnvelopeDesc> envelopes = new ArrayList<EnvelopeDesc>();
+        List<EnvelopeDesc> envelopes = new ArrayList<>();
         int si = 0;
         if (sp != null && signCerts != null && signCerts.length > 0) {
             envelopes.add(new EnvelopeDesc(sp.rawData, sp.rawSignature, signCerts[si++]));
@@ -164,7 +161,10 @@ final class MailWriter {
         if (src != null) {
             MimeBodyPart plainPart = new MimeBodyPart();
             fillPlain(plainPart, src.getName(), charset, comment);
-            String plainData = MimeUtil.base64(src.open());
+            String plainData;
+            try (InputStream is = src.open()) {
+                plainData = MimeUtil.base64(is);
+            }
             enveloper = new Enveloper(factory, plainPart, plainData);
         } else {
             enveloper = new Enveloper(factory, originalMsg, null);
@@ -219,7 +219,9 @@ final class MailWriter {
             plainPart = new MimeBodyPart();
             fillPlain(plainPart, src.getName(), charset, comment);
             mp.addBodyPart(plainPart);
-            data = MimeUtil.base64(src.open());
+            try (InputStream is = src.open()) {
+                data = MimeUtil.base64(is);
+            }
 
             String text = writeMessage(plainPart, data);
 
@@ -258,7 +260,9 @@ final class MailWriter {
         } else if (rawData != null) {
             los.writeln(rawData);
         } else {
-            los.writeln(MimeUtil.base64(rawSignature.getInputStream()));
+            try (InputStream is = rawSignature.getInputStream()) {
+                los.writeln(MimeUtil.base64(is));
+            }
         }
         los.writeln(boundary);
         writeMessage(los, signPart, signature);
