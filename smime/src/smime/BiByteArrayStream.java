@@ -21,6 +21,10 @@ public final class BiByteArrayStream {
         return bos.toString();
     }
 
+    public int size() {
+        return bos.size();
+    }
+
     private static final class MyByteArrayOutputStream extends ByteArrayOutputStream {
 
         InputStream toOut() {

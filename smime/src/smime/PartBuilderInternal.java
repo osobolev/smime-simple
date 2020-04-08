@@ -79,24 +79,28 @@ class PartBuilderInternal {
 
     final SMimePart cosignDetached(Part part, SignKey key) throws MessagingException, IOException, CryptoException {
         MimeMultipart mp = (MimeMultipart) part.getContent();
-        BodyPart part1 = mp.getBodyPart(0);
-        BodyPart part2 = mp.getBodyPart(1);
-        BodyPart dataPart;
-        BodyPart signaturePart;
-        if (part1.isMimeType("application/pkcs7-signature")) {
-            signaturePart = part1;
-            dataPart = part2;
+        if (mp.getCount() == 2) {
+            BodyPart part1 = mp.getBodyPart(0);
+            BodyPart part2 = mp.getBodyPart(1);
+            BodyPart dataPart;
+            BodyPart signaturePart;
+            if (part1.isMimeType("application/pkcs7-signature")) {
+                signaturePart = part1;
+                dataPart = part2;
+            } else {
+                signaturePart = part2;
+                dataPart = part1;
+            }
+            String data = MimeUtil.partToString(dataPart);
+            String cosigned;
+            try (InputStream is = signaturePart.getInputStream()) {
+                cosigned = getCrypto().cosignData(data, is, key);
+            }
+            MimeMultipart newMp = createSignedMultipart(dataPart, cosigned, mp.getPreamble());
+            return SMimePart.complex(newMp);
         } else {
-            signaturePart = part2;
-            dataPart = part1;
+            return PartBuilder.fromPart(part);
         }
-        String data = MimeUtil.partToString(dataPart);
-        String cosigned;
-        try (InputStream is = signaturePart.getInputStream()) {
-            cosigned = getCrypto().cosignData(data, is, key);
-        }
-        MimeMultipart newMp = createSignedMultipart(dataPart, cosigned, mp.getPreamble());
-        return SMimePart.complex(newMp);
     }
 
     public static SMimePart createText(String text, String charset) throws MessagingException, IOException {

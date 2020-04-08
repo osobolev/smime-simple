@@ -35,26 +35,38 @@ public final class PartWalker {
         return factory.getCrypto();
     }
 
+    private void walkMultipart(Multipart mp, List<SignInfo> signed) throws MessagingException, IOException, CryptoException {
+        int count = mp.getCount();
+        for (int i = 0; i < count; i++) {
+            BodyPart child = mp.getBodyPart(i);
+            walk(child, signed);
+        }
+    }
+
     private void walk(Part part, List<SignInfo> signed) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
             Multipart mp = (Multipart) part.getContent();
-            Part part1 = mp.getBodyPart(0);
-            Part part2 = mp.getBodyPart(1);
-            Part dataPart;
-            Part signaturePart;
-            if (part1.isMimeType("application/pkcs7-signature")) {
-                signaturePart = part1;
-                dataPart = part2;
+            if (mp.getCount() == 2) {
+                Part part1 = mp.getBodyPart(0);
+                Part part2 = mp.getBodyPart(1);
+                Part dataPart;
+                Part signaturePart;
+                if (part1.isMimeType("application/pkcs7-signature")) {
+                    signaturePart = part1;
+                    dataPart = part2;
+                } else {
+                    signaturePart = part2;
+                    dataPart = part1;
+                }
+                List<SignInfo> newSigned = new ArrayList<>(signed);
+                try (InputStream is = signaturePart.getInputStream()) {
+                    String data = MimeUtil.partToString(dataPart);
+                    getCrypto().getSignersDetached(data, is, newSigned);
+                }
+                walk(dataPart, newSigned);
             } else {
-                signaturePart = part2;
-                dataPart = part1;
+                walkMultipart(mp, signed);
             }
-            List<SignInfo> newSigned = new ArrayList<>(signed);
-            try (InputStream is = signaturePart.getInputStream()) {
-                String data = MimeUtil.partToString(dataPart);
-                getCrypto().getSignersDetached(data, is, newSigned);
-            }
-            walk(dataPart, newSigned);
         } else if (part.isMimeType("application/pkcs7-mime")) {
             ContentType contentType = new ContentType(part.getContentType());
             String smime = contentType.getParameter("smime-type");
@@ -74,11 +86,7 @@ public final class PartWalker {
             walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())), newSigned);
         } else if (part.isMimeType("multipart/*")) {
             Multipart mp = (Multipart) part.getContent();
-            int count = mp.getCount();
-            for (int i = 0; i < count; i++) {
-                BodyPart child = mp.getBodyPart(i);
-                walk(child, signed);
-            }
+            walkMultipart(mp, signed);
         } else {
             callback.leafPart(part, signed);
         }
