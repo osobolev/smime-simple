@@ -1,23 +1,23 @@
 subprojects {
-    apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
+    apply(plugin: "java-library")
+    apply(plugin: "maven-publish")
 
-    group = 'com.github.osobolev.smime-simple'
-    version = '1.1'
+    group = "com.github.osobolev.smime-simple"
+    version = "1.1"
 
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
                              
-    compileJava.options.encoding = 'UTF-8'
+    compileJava.options.encoding = "UTF-8"
 
     repositories {
         mavenCentral()
     }
 
-    jar.manifest.attributes('Implementation-Version': version)
+    jar.manifest.attributes("Implementation-Version": version)
 
-    sourceSets.main.java.srcDirs = ['src']
-    sourceSets.test.java.srcDirs = ['test']
+    sourceSets.main.java.srcDirs = ["src"]
+    sourceSets.test.java.srcDirs = ["test"]
 
     java {
         withSourcesJar()
@@ -26,37 +26,37 @@ subprojects {
     publishing {
         publications {
             mavenJava(MavenPublication) {
-                from components.java
+                from(components.java)
             }
         }
     }
 }
 
-project(':smime') {
+project(":smime") {
     dependencies {
-        api 'com.sun.mail:jakarta.mail:1.6.5'
+        api("com.sun.mail:jakarta.mail:1.6.5")
     }
 }
 
-project(':testing-bc') {
+project(":testing-bc") {
     dependencies {
-        api project(':smime')
-        api 'org.bouncycastle:bcprov-jdk15on:1.69'
-        api 'org.bouncycastle:bcpkix-jdk15on:1.69'
+        api(project(":smime"))
+        api("org.bouncycastle:bcprov-jdk15on:1.69")
+        api("org.bouncycastle:bcpkix-jdk15on:1.69")
     }
 }
 
-project(':testing-rand') {
+project(":testing-rand") {
     dependencies {
-        api project(':smime')
+        api(project(":smime"))
     }
 }
 
-project(':testing-test') {
+project(":testing-test") {
     dependencies {
-        testImplementation 'org.bouncycastle:bcmail-jdk15on:1.69'
-        testImplementation project(':smime')
-        testImplementation project(':testing-bc')
-        testImplementation project(':testing-rand')
+        testImplementation("org.bouncycastle:bcmail-jdk15on:1.69")
+        testImplementation(project(":smime"))
+        testImplementation(project(":testing-bc"))
+        testImplementation(project(":testing-rand"))
     }
 }
