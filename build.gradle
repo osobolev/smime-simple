@@ -41,8 +41,8 @@ project(':smime') {
 project(':testing-bc') {
     dependencies {
         api project(':smime')
-        api 'org.bouncycastle:bcprov-jdk15on:1.54'
-        api 'org.bouncycastle:bcpkix-jdk15on:1.54'
+        api 'org.bouncycastle:bcprov-jdk15on:1.69'
+        api 'org.bouncycastle:bcpkix-jdk15on:1.69'
     }
 }
 
@@ -54,7 +54,7 @@ project(':testing-rand') {
 
 project(':testing-test') {
     dependencies {
-        testImplementation 'org.bouncycastle:bcmail-jdk15on:1.54'
+        testImplementation 'org.bouncycastle:bcmail-jdk15on:1.69'
         testImplementation project(':smime')
         testImplementation project(':testing-bc')
         testImplementation project(':testing-rand')
