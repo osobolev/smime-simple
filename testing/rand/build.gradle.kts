@@ -3,5 +3,5 @@ plugins {
 }
 
 dependencies {
-    api(project(":smime"))
+    api(project(":smime-simple"))
 }

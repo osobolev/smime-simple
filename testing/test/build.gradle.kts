@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     testImplementation("org.bouncycastle:bcmail-jdk15on:1.69")
-    testImplementation(project(":smime"))
-    testImplementation(project(":testing-bc"))
-    testImplementation(project(":testing-rand"))
+    testImplementation(project(":smime-simple"))
+    testImplementation(project(":smime-testing-bc"))
+    testImplementation(project(":smime-testing-rand"))
 }
