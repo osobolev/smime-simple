@@ -7,6 +7,10 @@ plugins {
 group = "io.github.osobolev"
 version = "1.1"
 
+repositories {
+    mavenCentral()
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
@@ -26,20 +30,12 @@ tasks {
     withType(JavaCompile::class) {
         options.encoding = "UTF-8"
     }
-}
-
-repositories {
-    mavenCentral()
-}
-
-tasks.javadoc {
-    (options as CoreJavadocOptions).addBooleanOption("Xdoclint:none", true)
-    options.quiet()
-}
-
-tasks.jar {
-    manifest {
-        attributes("Implementation-Version" to project.version)
+    javadoc {
+        (options as CoreJavadocOptions).addBooleanOption("Xdoclint:none", true)
+        options.quiet()
+    }
+    jar {
+        manifest.attributes["Implementation-Version"] = project.version
     }
 }
 
