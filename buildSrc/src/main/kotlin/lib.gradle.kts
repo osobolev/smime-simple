@@ -43,8 +43,8 @@ tasks.jar {
     }
 }
 
-val ossrhUsername: String? by project
-val ossrhPassword: String? by project
+val sonatypeUsername: String? by project
+val sonatypePassword: String? by project
 
 publishing {
     publications {
@@ -79,8 +79,8 @@ publishing {
         maven {
             url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
             credentials {
-                username = ossrhUsername
-                password = ossrhPassword
+                username = sonatypeUsername
+                password = sonatypePassword
             }
         }
     }
