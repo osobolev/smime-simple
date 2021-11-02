@@ -31,6 +31,8 @@ tasks {
         options.encoding = "UTF-8"
     }
     javadoc {
+        options.encoding = "UTF-8"
+        (options as? StandardJavadocDocletOptions)?.charSet("UTF-8")
         (options as CoreJavadocOptions).addBooleanOption("Xdoclint:none", true)
         options.quiet()
     }
