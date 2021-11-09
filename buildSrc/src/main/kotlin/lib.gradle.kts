@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "io.github.osobolev"
-version = "1.2"
+version = "2.0"
 
 (publishing.publications["mavenJava"] as MavenPublication).pom {
     name.set("smime-simple")

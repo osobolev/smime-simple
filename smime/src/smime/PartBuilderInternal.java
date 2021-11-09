@@ -1,9 +1,10 @@
 package smime;
 
-import javax.mail.BodyPart;
-import javax.mail.MessagingException;
-import javax.mail.Part;
-import javax.mail.internet.*;
+import jakarta.mail.BodyPart;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Part;
+import jakarta.mail.internet.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 

@@ -1,5 +1,8 @@
 package smime.test;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import smime.*;
@@ -7,9 +10,6 @@ import smime.bc.CryptoFactoryImpl;
 import smime.bc.KeyData;
 import smime.rand.RandomMessageBuilder;
 
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;

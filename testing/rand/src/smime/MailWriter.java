@@ -1,11 +1,11 @@
 package smime;
 
 import com.sun.mail.util.LineOutputStream;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Part;
+import jakarta.mail.Session;
+import jakarta.mail.internet.*;
 
-import javax.mail.MessagingException;
-import javax.mail.Part;
-import javax.mail.Session;
-import javax.mail.internet.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;

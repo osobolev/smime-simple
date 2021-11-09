@@ -1,6 +1,6 @@
 package smime;
 
-import javax.mail.Part;
+import jakarta.mail.Part;
 
 final class EnvelopeDesc {
 

@@ -3,11 +3,14 @@ package smime;
 import com.sun.mail.util.BASE64EncoderStream;
 import com.sun.mail.util.CRLFOutputStream;
 import com.sun.mail.util.LineOutputStream;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Part;
+import jakarta.mail.internet.MimePart;
 
-import javax.mail.MessagingException;
-import javax.mail.Part;
-import javax.mail.internet.MimePart;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
 
 public final class MimeUtil {

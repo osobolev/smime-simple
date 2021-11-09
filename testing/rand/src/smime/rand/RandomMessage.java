@@ -1,6 +1,6 @@
 package smime.rand;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 
 public final class RandomMessage {
 
