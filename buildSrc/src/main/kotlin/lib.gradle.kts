@@ -2,7 +2,7 @@ plugins {
     id("base-lib")
 }
 
-group = "io.github.osobolev"
+group = "io.github.osobolev.smime"
 version = "2.0"
 
 (publishing.publications["mavenJava"] as MavenPublication).pom {
