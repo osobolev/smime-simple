@@ -87,6 +87,9 @@ public final class PartWalker {
         } else if (part.isMimeType("multipart/*")) {
             Multipart mp = (Multipart) part.getContent();
             walkMultipart(mp, signed);
+        } else if (part.isMimeType("message/rfc822")) {
+            MimeMessage nested = new MimeMessage(null, part.getInputStream());
+            walk(nested, signed);
         } else {
             callback.leafPart(part, signed);
         }
