@@ -10,8 +10,8 @@ public interface Crypto {
 
     /**
      * @param data raw data to verify
-     * @return raw signed ASCII data
      * @param signers signers' data is added to this list
+     * @return raw signed ASCII data
      */
     String getSigners(InputStream data, List<SignInfo> signers) throws CryptoException, IOException;
 
