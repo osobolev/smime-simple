@@ -3,8 +3,8 @@ plugins {
 }
 
 dependencies {
-    testImplementation("org.bouncycastle:bcmail-jdk18on:1.76")
-    testImplementation(project(":smime-simple"))
-    testImplementation(project(":smime-testing-bc"))
-    testImplementation(project(":smime-testing-rand"))
+    manualImplementation("org.bouncycastle:bcmail-jdk18on:1.77")
+    manualImplementation(project(":smime-simple"))
+    manualImplementation(project(":smime-testing-bc"))
+    manualImplementation(project(":smime-testing-rand"))
 }
