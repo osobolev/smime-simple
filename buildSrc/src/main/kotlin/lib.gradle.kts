@@ -6,7 +6,7 @@ group = "io.github.osobolev"
 version = "1.5.1"
 
 (publishing.publications["mavenJava"] as MavenPublication).pom {
-    name.set("smime-simple")
+    name.set("${project.group}:${project.name}")
     description.set("Simple S/MIME library not dependent on Java Security")
     url.set("https://github.com/osobolev/smime-simple")
     licenses {
