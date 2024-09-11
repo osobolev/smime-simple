@@ -4,8 +4,11 @@ import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.internet.MimeBodyPart;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public final class SMimePart {
 
@@ -20,7 +23,7 @@ public final class SMimePart {
             super(is);
         }
 
-        public void commit() throws MessagingException {
+        void commit() throws MessagingException {
             if (dirty) {
                 updateHeaders();
                 dirty = false;
@@ -55,5 +58,25 @@ public final class SMimePart {
     MimeBodyPart getPart() throws MessagingException {
         part.commit();
         return part;
+    }
+
+    public interface PartModifier {
+
+        void modify(MimeBodyPart part) throws MessagingException;
+    }
+
+    public void modify(PartModifier consumer) throws MessagingException {
+        part.dirty = true;
+        consumer.modify(part);
+    }
+
+    public void writeTo(OutputStream os) throws MessagingException, IOException {
+        MimeUtil.writePart(os, getPart());
+    }
+
+    public String getText() throws MessagingException, IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        writeTo(bos);
+        return bos.toString();
     }
 }
