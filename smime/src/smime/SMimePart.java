@@ -60,11 +60,6 @@ public final class SMimePart {
         return part;
     }
 
-    public interface PartModifier {
-
-        void modify(MimeBodyPart part) throws MessagingException, IOException;
-    }
-
     public void modify(PartModifier consumer) throws MessagingException, IOException {
         part.dirty = true;
         consumer.modify(part);
