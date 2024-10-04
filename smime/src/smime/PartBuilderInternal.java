@@ -109,19 +109,34 @@ class PartBuilderInternal {
         return SMimePart.simple(part);
     }
 
-    public static SMimePart createFile(InputStreamSource src, String contentType, String charset, String comment) throws MessagingException, IOException {
+    public static SMimePart createFile(InputStreamSource src, PartModifier builder) throws MessagingException, IOException {
         MimeBodyPart headers = new MimeBodyPart();
-        headers.setDescription(comment);
-        headers.setHeader(CONTENT_TYPE, contentType);
         headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
-        ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
-        disposition.setParameter("filename", MimeUtility.encodeText(src.getName(), charset, "Q"));
-        headers.setDisposition(disposition.toString());
+        builder.modify(headers);
         String base64;
         try (InputStream is = src.open()) {
             base64 = MimeUtil.base64(is);
         }
         return createPart(headers, base64);
+    }
+
+    public static SMimePart createFile(InputStreamSource src, String contentType, String description) throws MessagingException, IOException {
+        return createFile(src, headers -> {
+            headers.setDescription(description);
+            headers.setHeader(CONTENT_TYPE, contentType);
+            headers.setFileName(src.getName());
+        });
+    }
+
+    @Deprecated
+    public static SMimePart createFile(InputStreamSource src, String contentType, String charset, String description) throws MessagingException, IOException {
+        return createFile(src, headers -> {
+            headers.setDescription(description);
+            headers.setHeader(CONTENT_TYPE, contentType);
+            ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
+            disposition.setParameter("filename", MimeUtility.encodeText(src.getName(), charset, "Q"));
+            headers.setDisposition(disposition.toString());
+        });
     }
 
     static SMimePart createMulti(String preamble, String mimeSubType, BodyPart... parts) throws MessagingException {
