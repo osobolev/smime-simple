@@ -120,23 +120,31 @@ class PartBuilderInternal {
         return createPart(headers, base64);
     }
 
-    public static SMimePart createFile(InputStreamSource src, String contentType, String description) throws MessagingException, IOException {
+    /**
+     * @param encoding null to use RFC2231 encoding;
+     *                 "Q" or "B" to encode file name (non-standard)
+     */
+    public static SMimePart createFileEncoded(InputStreamSource src, String contentType, String charset, String description,
+                                              String encoding) throws MessagingException, IOException {
         return createFile(src, headers -> {
-            headers.setDescription(description);
+            headers.setDescription(description, charset);
             headers.setHeader(CONTENT_TYPE, contentType);
-            headers.setFileName(src.getName());
+            ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
+            ParameterList params = new ParameterList();
+            disposition.setParameterList(params);
+            String fileName;
+            if (encoding == null) {
+                fileName = src.getName();
+            } else {
+                fileName = MimeUtility.encodeText(src.getName(), charset, encoding);
+            }
+            params.set("filename", fileName, charset);
+            headers.setDisposition(disposition.toString());
         });
     }
 
-    @Deprecated
     public static SMimePart createFile(InputStreamSource src, String contentType, String charset, String description) throws MessagingException, IOException {
-        return createFile(src, headers -> {
-            headers.setDescription(description);
-            headers.setHeader(CONTENT_TYPE, contentType);
-            ContentDisposition disposition = new ContentDisposition(Part.ATTACHMENT);
-            disposition.setParameter("filename", MimeUtility.encodeText(src.getName(), charset, "Q"));
-            headers.setDisposition(disposition.toString());
-        });
+        return createFileEncoded(src, contentType, charset, description, null);
     }
 
     static SMimePart createMulti(String preamble, String mimeSubType, BodyPart... parts) throws MessagingException {
