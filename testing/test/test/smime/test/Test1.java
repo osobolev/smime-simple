@@ -42,7 +42,7 @@ public final class Test1 {
 
         {
             PartBuilder builder = new PartBuilder(factory);
-            SMimePart filePart = PartBuilder.createFile(src, "text/plain", "Comment");
+            SMimePart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
             SMimePart textPart = PartBuilder.createText("Hello!", "Windows-1251");
             SMimePart multiPart = PartBuilder.createMulti(textPart, filePart);
             SMimePart signed = builder.signDetached(multiPart, key1.getSignKey());

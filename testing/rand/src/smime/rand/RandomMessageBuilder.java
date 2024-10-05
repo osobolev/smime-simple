@@ -53,7 +53,7 @@ public final class RandomMessageBuilder {
         boolean signed = false;
         if (isNew) {
             buf.append("New");
-            SMimePart filePart = PartBuilder.createFile(src, "text/plain", "Comment");
+            SMimePart filePart = PartBuilder.createFile(src, "text/plain", "Windows-1251", "Comment");
             int envelopes = rnd.nextInt(5);
             SMimePart current = filePart;
             boolean wasDetached = false;
