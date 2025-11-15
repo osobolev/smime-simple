@@ -4,5 +4,5 @@ plugins {
 }
 
 dependencies {
-    api("com.sun.mail:jakarta.mail:1.6.7")
+    api("com.sun.mail:jakarta.mail:1.6.8")
 }
