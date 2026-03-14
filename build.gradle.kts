@@ -12,7 +12,8 @@ fun getMajor(version: String, majorDepth: Int): String {
 }
 
 fun getMajorDepth(mod: ModuleComponentIdentifier): Int {
-    return 1
+    if (mod.group == "com.sun.mail") return 1
+    return 0
 }
 
 tasks.withType(com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask::class).configureEach {
