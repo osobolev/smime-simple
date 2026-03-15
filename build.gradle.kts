@@ -12,7 +12,7 @@ fun getMajor(version: String, majorDepth: Int): String {
 }
 
 fun getMajorDepth(mod: ModuleComponentIdentifier): Int {
-    if (mod.group == "com.sun.mail") return 1
+    if (mod.group == "com.sun.mail") return 1 // Version >= 2 uses jakarta namespace
     return 0
 }
 
