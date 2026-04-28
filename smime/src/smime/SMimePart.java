@@ -35,11 +35,11 @@ public final class SMimePart {
     }
 
     static MimeBodyPart newPart(String data) throws MessagingException {
-        return new MimeBodyPart(new ByteArrayInputStream(data.getBytes()));
+        return new CommitablePart(new ByteArrayInputStream(data.getBytes()));
     }
 
     static MimeBodyPart newPart() {
-        return new MimeBodyPart();
+        return new CommitablePart();
     }
 
     static SMimePart complex(Multipart mp) throws MessagingException {
