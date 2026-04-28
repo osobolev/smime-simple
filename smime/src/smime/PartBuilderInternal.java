@@ -99,7 +99,7 @@ class PartBuilderInternal {
             MimeMultipart newMp = createSignedMultipart(dataPart, cosigned, mp.getPreamble());
             return SMimePart.complex(newMp);
         } else {
-            return PartBuilder.fromPart(part);
+            return SMimePart.simple(part);
         }
     }
 

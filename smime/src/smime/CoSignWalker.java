@@ -33,7 +33,7 @@ public final class CoSignWalker {
         if (part.isMimeType("multipart/signed")) {
             signed[0] = true;
             if (addKey == null) {
-                return PartBuilder.fromPart(part);
+                return SMimePart.simple(part);
             } else {
                 return builder.cosignDetached(part, addKey);
             }
@@ -43,7 +43,7 @@ public final class CoSignWalker {
             if ("signed-data".equals(smime)) {
                 signed[0] = true;
                 if (addKey == null) {
-                    return PartBuilder.fromPart(part);
+                    return SMimePart.simple(part);
                 } else {
                     return builder.cosign(part, addKey);
                 }
@@ -73,7 +73,7 @@ public final class CoSignWalker {
             }
             return SMimePart.complex(newMp);
         } else {
-            return PartBuilder.fromPart(part);
+            return SMimePart.simple(part);
         }
     }
 }
