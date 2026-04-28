@@ -5,10 +5,8 @@ import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.internet.ContentType;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeUtility;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -83,7 +81,7 @@ public final class PartWalker {
                     decrypted = getCrypto().decryptData(is);
                 }
             }
-            walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())), newSigned);
+            walk(SMimePart.newPart(decrypted), newSigned);
         } else if (part.isMimeType("multipart/*")) {
             Multipart mp = (Multipart) part.getContent();
             walkMultipart(mp, signed);

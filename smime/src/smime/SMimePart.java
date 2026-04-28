@@ -5,10 +5,7 @@ import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.internet.MimeBodyPart;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 public final class SMimePart {
 
@@ -35,6 +32,14 @@ public final class SMimePart {
 
     private SMimePart(CommitablePart part) {
         this.part = part;
+    }
+
+    static MimeBodyPart newPart(String data) throws MessagingException {
+        return new MimeBodyPart(new ByteArrayInputStream(data.getBytes()));
+    }
+
+    static MimeBodyPart newPart() {
+        return new MimeBodyPart();
     }
 
     static SMimePart complex(Multipart mp) throws MessagingException {

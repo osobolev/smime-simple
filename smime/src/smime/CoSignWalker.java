@@ -2,7 +2,6 @@ package smime;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.*;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -52,7 +51,7 @@ public final class CoSignWalker {
                 try (InputStream is = part.getInputStream()) {
                     decrypted = getCrypto().decryptData(is);
                 }
-                return walk(new MimeBodyPart(new ByteArrayInputStream(decrypted.getBytes())), signed);
+                return walk(SMimePart.newPart(decrypted), signed);
             }
         } else if (part.isMimeType("multipart/*")) {
             MimeMultipart mp = (MimeMultipart) part.getContent();

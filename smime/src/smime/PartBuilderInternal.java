@@ -26,7 +26,7 @@ class PartBuilderInternal {
     }
 
     private static SMimePart createCryptoPart(String mimeType, String fileName, String base64) throws MessagingException, IOException {
-        MimeBodyPart headers = new MimeBodyPart();
+        MimeBodyPart headers = SMimePart.newPart();
         headers.setHeader(CONTENT_TYPE, mimeType);
         headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
         headers.setDisposition(Part.ATTACHMENT);
@@ -104,13 +104,13 @@ class PartBuilderInternal {
     }
 
     public static SMimePart createText(String text, String charset) throws MessagingException, IOException {
-        MimeBodyPart part = new MimeBodyPart();
+        MimeBodyPart part = SMimePart.newPart();
         part.setText(text, charset);
         return SMimePart.simple(part);
     }
 
     public static SMimePart createFile(InputStreamSource src, PartModifier builder) throws MessagingException, IOException {
-        MimeBodyPart headers = new MimeBodyPart();
+        MimeBodyPart headers = SMimePart.newPart();
         headers.setHeader(CONTENT_TRANSFER_ENCODING, BASE64);
         builder.modify(headers);
         String base64;
