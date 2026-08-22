@@ -4,6 +4,6 @@ plugins {
 
 dependencies {
     api(project(":smime-simple"))
-    api("org.bouncycastle:bcprov-jdk18on:1.85")
+    api("org.bouncycastle:bcprov-jdk18on:1.85.2")
     api("org.bouncycastle:bcpkix-jdk18on:1.85")
 }
