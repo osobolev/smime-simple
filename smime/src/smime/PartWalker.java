@@ -41,6 +41,7 @@ public final class PartWalker {
         }
     }
 
+    @SuppressWarnings("TailRecursion")
     private void walk(Part part, List<SignInfo> signed) throws MessagingException, IOException, CryptoException {
         if (part.isMimeType("multipart/signed")) {
             Multipart mp = (Multipart) part.getContent();
