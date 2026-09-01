@@ -1,20 +1,35 @@
 package smime;
 
+import javax.mail.Header;
 import javax.mail.MessagingException;
 import javax.mail.internet.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 
 public final class CoSignWalker {
 
+    public static final String[] STANDARD_HEADERS = {
+        "Date", "From", "Sender", "Reply-To",
+        "To", "Cc", "Bcc",
+        "Message-ID", "In-Reply-To", "References",
+        "Subject", "Comments", "Keywords"
+    };
+    
     private final CryptoFactory factory;
     private final PartBuilder builder;
     private final SignKey addKey;
+    private final String[] preserveNestedMessageHeaders;
 
-    public CoSignWalker(CryptoFactory factory, SignKey addKey) {
+    public CoSignWalker(CryptoFactory factory, SignKey addKey, String[] preserveNestedMessageHeaders) {
         this.factory = factory;
         this.builder = new PartBuilder(factory);
         this.addKey = addKey;
+        this.preserveNestedMessageHeaders = preserveNestedMessageHeaders;
+    }
+
+    public CoSignWalker(CryptoFactory factory, SignKey addKey) {
+        this(factory, addKey, null);
     }
 
     public CoSignedMessage walk(MimeMessage message) throws MessagingException, IOException, CryptoException {
@@ -71,6 +86,22 @@ public final class CoSignWalker {
                 newMp.addBodyPart(newChild.getPart());
             }
             return SMimePart.complex(newMp);
+        } else if (part.isMimeType("message/rfc822")) {
+            MimeMessage nested = new MimeMessage(null, part.getInputStream());
+            SMimePart signedContent = walk(nested, signed);
+            if (preserveNestedMessageHeaders != null) {
+                MimeMessage wrappedMessage = PartBuilder.toMessage(null, signedContent);
+                Enumeration<Header> headers = nested.getMatchingHeaders(preserveNestedMessageHeaders);
+                while (headers.hasMoreElements()) {
+                    Header header = headers.nextElement();
+                    wrappedMessage.setHeader(header.getName(), header.getValue());
+                }
+                MimeBodyPart messagePart = SMimePart.newPart();
+                messagePart.setContent(wrappedMessage, part.getContentType());
+                return SMimePart.simple(messagePart);
+            } else {
+                return signedContent;
+            }
         } else {
             return SMimePart.simple(part);
         }
